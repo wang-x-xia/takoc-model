@@ -1,0 +1,13 @@
+{
+  "name": "takoc-model",
+  "version": "1.0.0",
+  "description": "A type system for programming lang",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "Wang_x_Xia",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  }
+}
