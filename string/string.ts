@@ -16,7 +16,7 @@ export default function (typeSystem: TypeSystem) {
     )
 
     typeSystem.canAssignTo({
-        "assign": "text",
+        "from": "text",
         "to": "string"
     })
 
@@ -28,7 +28,7 @@ export default function (typeSystem: TypeSystem) {
     )
 
     typeSystem.canAssignTo({
-        "assign": "single-line",
+        "from": "single-line",
         "to": "text"
     })
 
@@ -40,12 +40,14 @@ export default function (typeSystem: TypeSystem) {
     )
 
     typeSystem.canAssignTo({
-        "assign": "lines",
+        "from": "lines",
         "to": "text"
     })
 
     typeSystem.canAssignTo({
-        "assign": "single-lines",
+        "from": "single-lines",
         "to": "lines"
     })
+
+    return {}
 }
