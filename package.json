@@ -2,12 +2,16 @@
   "name": "takoc-model",
   "version": "1.0.0",
   "description": "A type system for programming lang",
-  "main": "index.js",
   "scripts": {
+    "main": "ts-node ./main.ts"
   },
   "author": "Wang_x_Xia",
   "license": "MIT",
+  "dependencies": {
+    "ts-node": "^10.9.2"
+  },
   "devDependencies": {
+    "ts-morph": "^22.0.0",
     "typescript": "^5.0.4"
   }
 }
