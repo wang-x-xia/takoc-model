@@ -1,6 +1,22 @@
-# Takoc
+# Takoc V1
 
-## Takoc V1
+First, let me explain a bit about Takoc's background. Takoc aims to create a type system that enables high-level
+programming across multiple programming languages. It seeks to provide a unified language, data model, and interaction
+approach for managing code and projects.
 
-The goal of Takoc V1 is very simple - to create a project that extracts its own information.
-Any global variable, type, or method used in the project can be accessed through its ID.
+But implementing so many features is not realistic. I have tried many frameworks and realized that it is not possible to
+design everything in one go. Therefore, the goal for Takoc V1 is very simple: to **Create a Typescript project that
+manages itself**.
+
+Of course, even this task alone is quite challenging, despite the fact that there are already many ways in the community
+to work with TypeScript projects.
+
+So, in V1, the entire process will also be broken down into many smaller User Stories to be completed:
+
+1. Generate `constructor` method
+2. TODO
+
+## Story-1 Generate `constructor` method
+
+### Task-1-1 Generate `constructor` method for literal type
+

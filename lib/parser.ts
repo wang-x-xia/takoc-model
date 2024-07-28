@@ -1,5 +1,5 @@
-import {Project} from "ts-morph";
-import type {TsElement} from "./core";
+import {Project, TypeNode} from "ts-morph";
+import type {TypescriptElement, TypescriptLiteralType, TypescriptLiteralValue} from "./core";
 
 /**
  * Parses a TypeScript file and returns a list of elements.
@@ -7,11 +7,11 @@ import type {TsElement} from "./core";
  * @param filePath
  * @returns elements
  */
-export function parseTsFile(filePath: string): any[] {
+export function parseTsFile(filePath: string): TypescriptElement[] {
     const project = new Project();
     const sourceFile = project.addSourceFileAtPath(filePath);
 
-    const elements: TsElement[] = [];
+    const elements: TypescriptElement[] = [];
 
     // Extract variables
     sourceFile.getVariableDeclarations().forEach((variable) => {
@@ -62,4 +62,35 @@ export function parseTsFile(filePath: string): any[] {
     });
 
     return elements;
+}
+
+export function resolveTypescriptLiteralType(filePath: string, type: TypescriptElement): TypescriptLiteralType {
+    const project = new Project();
+    const sourceFile = project.addSourceFileAtPath(filePath);
+
+    const typeAlias = sourceFile.getTypeAlias(type["name"])
+
+    const values: TypescriptLiteralValue[] = []
+
+    function collectLiteral(node: TypeNode) {
+        if (TypeNode.isLiteralTypeNode(node)) {
+            const value = node.getLiteral()
+            if (TypeNode.isStringLiteral(value)) {
+                values.push(value.getLiteralValue())
+            } else if (TypeNode.isNumericLiteral(value)) {
+                values.push(value.getLiteralValue())
+            } else {
+                throw new Error("Unknown Literal Type")
+            }
+        } else if (TypeNode.isUnionTypeNode(node)) {
+            node.getTypeNodes().forEach(child => collectLiteral(child))
+        } else {
+            throw new Error("Unknown Literal Type")
+        }
+    }
+
+    collectLiteral(typeAlias.getTypeNodeOrThrow("Unknown Node for Type Alias"))
+    return {
+        "values": values,
+    }
 }
