@@ -12,7 +12,7 @@ export function createTypescriptElementType(value: TypescriptElementType): Types
 export type TypescriptIdentifier = string
 
 
-export function checkTypescriptIdentifier(value: string): value is TypescriptIdentifier {
+export function checkTypescriptIdentifier(value: TypescriptIdentifier): value is TypescriptIdentifier {
     const regex = /[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*/u
     return regex.test(value)
 }
@@ -59,4 +59,10 @@ export interface TypescriptInterfaceFieldsConstructor {
 export interface TypeScriptGeneratedFunction {
     name: string,
     declaration: string,
+}
+
+export type TypescriptFilePath = string
+
+export interface TypescriptFile {
+    elements: TypescriptElement[],
 }

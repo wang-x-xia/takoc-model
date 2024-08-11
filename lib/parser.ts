@@ -1,5 +1,11 @@
-import {Project, TypeNode} from "ts-morph";
-import type {TypescriptElement, TypescriptLiteralType, TypescriptLiteralValue} from "./core";
+import {Project, SourceFile, TypeNode} from "ts-morph";
+import type {
+    TypescriptElement,
+    TypescriptFile,
+    TypescriptFilePath,
+    TypescriptLiteralType,
+    TypescriptLiteralValue
+} from "./core";
 
 /**
  * Parses a TypeScript file and returns a list of elements.
@@ -7,9 +13,8 @@ import type {TypescriptElement, TypescriptLiteralType, TypescriptLiteralValue} f
  * @param filePath
  * @returns elements
  */
-export function parseTsFile(filePath: string): TypescriptElement[] {
-    const project = new Project();
-    const sourceFile = project.addSourceFileAtPath(filePath);
+export function parseTsFile(filePath: TypescriptFilePath): TypescriptFile {
+    const sourceFile = readTypescriptFile(filePath)
 
     const elements: TypescriptElement[] = [];
 
@@ -61,12 +66,13 @@ export function parseTsFile(filePath: string): TypescriptElement[] {
         });
     });
 
-    return elements;
+    return {
+        elements,
+    }
 }
 
-export function resolveTypescriptLiteralType(filePath: string, type: TypescriptElement): TypescriptLiteralType {
-    const project = new Project();
-    const sourceFile = project.addSourceFileAtPath(filePath);
+export function resolveTypescriptLiteralType(filePath: TypescriptFilePath, type: TypescriptElement): TypescriptLiteralType {
+    const sourceFile = readTypescriptFile(filePath)
 
     const typeAlias = sourceFile.getTypeAlias(type["name"])
 
@@ -93,4 +99,10 @@ export function resolveTypescriptLiteralType(filePath: string, type: TypescriptE
     return {
         "values": values,
     }
+}
+
+
+export function readTypescriptFile(filePath: TypescriptFilePath): SourceFile {
+    const project = new Project();
+    return project.addSourceFileAtPath(filePath);
 }
