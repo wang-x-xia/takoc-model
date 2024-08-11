@@ -1,5 +1,10 @@
 import {Project} from "ts-morph";
-import type {TypescriptElement, TypeScriptGeneratedFunction, TypescriptLiteralType} from "./core";
+import type {
+    TypescriptElement,
+    TypeScriptGeneratedFunction,
+    TypescriptInterfaceFieldsConstructor,
+    TypescriptLiteralType
+} from "./core";
 
 
 export function generateConstructorMethodForTypescriptLiteralType(
@@ -28,6 +33,29 @@ export function generateConstructorMethodForTypescriptString(
         throw new Error("Unmatched String Value")
     }
     return value
+}`
+    return {
+        name: functionName,
+        declaration: body,
+    }
+}
+
+
+export function generateConstructorMethodForTypescriptInterface(
+    element: TypescriptElement,
+    fieldsConstructor: TypescriptInterfaceFieldsConstructor): TypeScriptGeneratedFunction {
+    const functionName = "create" + element.name
+    const body = `export function ${functionName}(value: ${element["name"]}): ${element["name"]} {
+    const result = {
+${fieldsConstructor.fields.map(field => {
+        if (field.method) {
+            return "        " + field["name"] + ": " + field["method"]["name"] + "(value." + field["name"] + ")"
+        } else {
+            return "        " + field["name"] + ": " + "value." + field["name"]
+        }
+    }).join(",\n")}
+    }
+    return Object.freeze(result)
 }`
     return {
         name: functionName,

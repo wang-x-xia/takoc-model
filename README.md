@@ -20,4 +20,5 @@ So, in V1, the entire process will also be broken down into many smaller User St
 
 ### Task-1-1 Generate `constructor` method for literal type
 ### Task-1-2 Generate `constructor` method for string type with check rule
+### Task-1-3 Generate `constructor` method for interface type
 

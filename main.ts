@@ -1,4 +1,5 @@
 import {
+    generateConstructorMethodForTypescriptInterface,
     generateConstructorMethodForTypescriptLiteralType,
     generateConstructorMethodForTypescriptString,
     replaceGeneratedMethod
@@ -21,3 +22,17 @@ const typescriptIdentifierTypeElement = coreTsTypescriptElements.filter(it => it
 const checkTypescriptIdentifierTypeElement = coreTsTypescriptElements.filter(it => it.name === "checkTypescriptIdentifier")[0]
 const typescriptIdentifierConstructor = generateConstructorMethodForTypescriptString(typescriptIdentifierTypeElement, checkTypescriptIdentifierTypeElement)
 replaceGeneratedMethod("lib/core.ts", typescriptIdentifierConstructor)
+
+
+const typescriptTypeElement = coreTsTypescriptElements.filter(it => it.name === "TypescriptElement")[0]
+const constructorMethodForTypescriptInterface = generateConstructorMethodForTypescriptInterface(typescriptTypeElement, {
+    fields: [{
+        name: "name",
+        method: coreTsTypescriptElements.filter(it => it.name === "createTypescriptIdentifier")[0],
+    }, {
+        name: "type",
+        method: coreTsTypescriptElements.filter(it => it.name === "createTypescriptElementType")[0],
+    }
+    ]
+});
+replaceGeneratedMethod("lib/core.ts", constructorMethodForTypescriptInterface)

@@ -29,10 +29,30 @@ export interface TypescriptElement {
     type: TypescriptElementType,
 }
 
+export function createTypescriptElement(value: TypescriptElement): TypescriptElement {
+    const result = {
+        name: createTypescriptIdentifier(value.name),
+        type: createTypescriptElementType(value.type)
+    }
+    return Object.freeze(result)
+}
+
 export type TypescriptLiteralValue = number | string
 
 export interface TypescriptLiteralType {
     values: TypescriptLiteralValue[]
+}
+
+export type TypescriptFieldName = string
+
+
+export interface TypescriptInterfaceFieldConstructor {
+    name: TypescriptFieldName,
+    method?: TypescriptElement,
+}
+
+export interface TypescriptInterfaceFieldsConstructor {
+    fields: TypescriptInterfaceFieldConstructor[],
 }
 
 
