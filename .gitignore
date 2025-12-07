@@ -1,6 +1,12 @@
-# npm Dependency directories
-node_modules/
+# python and uv
+__pycache__/
+.mypy_cache/
+.venv/
+*.egg-info/
 
 # IDEA
-.idea
+.idea/
 *.iml
+
+# Unit test
+.test/

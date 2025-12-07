@@ -1,0 +1,883 @@
+openapi: 3.0.3
+info:
+  title: Store API v1
+  description: A RESTful database API for namespace, table, and data management. Includes a default 'takoc' namespace for system metadata.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Default API server
+
+components:
+
+  schemas:
+    Namespace:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the namespace
+        name:
+          type: string
+          description: Name of the namespace
+        description:
+          type: string
+          description: Description of the namespace
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+
+    NamespaceCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the namespace
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          description: Description of the namespace
+      required:
+        - name
+
+    NamespaceUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the namespace
+
+    Table:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the table
+        name:
+          type: string
+          description: Name of the table
+        namespace:
+          type: string
+          description: Name of the parent namespace
+        description:
+          type: string
+          description: Description of the table
+        schema:
+          type: object
+          description: JSON Schema for the table
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - namespace
+        - schema
+
+    TableCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the table
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          description: Description of the table
+        schema:
+          type: object
+          description: JSON Schema for the table
+          minProperties: 1
+      required:
+        - name
+        - schema
+
+    TableUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the table
+        schema:
+          type: object
+          description: JSON Schema for the table
+          minProperties: 1
+
+    Record:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the record
+        data:
+          type: object
+          description: Record data
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - data
+
+    RecordCreate:
+      type: object
+      description: Record data to create
+
+    RecordUpdate:
+      type: object
+      properties:
+        data:
+          type: object
+          description: Record data to update
+      required:
+        - data
+
+
+
+    PaginatedResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        page:
+          type: integer
+          description: Current page number
+        per_page:
+          type: integer
+          description: Number of items per page
+
+    NamespaceListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            namespaces:
+              type: array
+              items:
+                $ref: '#/components/schemas/Namespace'
+          required:
+            - namespaces
+
+    TableListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            tables:
+              type: array
+              items:
+                $ref: '#/components/schemas/Table'
+          required:
+            - tables
+
+    RecordListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/Record'
+          required:
+            - records
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            details:
+              type: string
+              description: Additional error details
+          required:
+            - code
+            - message
+      required:
+        - error
+
+paths:
+  /namespace:
+    post:
+      summary: Create a new namespace
+      description: Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceCreate'
+      responses:
+        '201':
+          description: Namespace created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Namespace'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List all namespaces
+      description: Get a list of all namespaces with pagination
+
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of namespaces per page
+      responses:
+        '200':
+          description: List of namespaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamespaceListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /namespace/{namespace}:
+    get:
+      summary: Get a namespace by name
+      description: Retrieve a specific namespace by its name
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+      responses:
+        '200':
+          description: Namespace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Namespace'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a namespace
+      description: Update an existing namespace
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceUpdate'
+      responses:
+        '200':
+          description: Namespace updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Namespace'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a namespace
+      description: Delete an existing namespace
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+      responses:
+        '204':
+          description: Namespace deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /table/{namespace}:
+    post:
+      summary: Create a new table
+      description: Create a new table within a namespace
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TableCreate'
+      responses:
+        '201':
+          description: Table created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List tables in a namespace
+      description: Get a list of all tables within a namespace
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of tables per page
+      responses:
+        '200':
+          description: List of tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /table/{namespace}/{table}:
+    get:
+      summary: Get a table by name
+      description: Retrieve a specific table by its name
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+      responses:
+        '200':
+          description: Table details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a table
+      description: Update an existing table
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TableUpdate'
+      responses:
+        '200':
+          description: Table updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a table
+      description: Delete an existing table
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+      responses:
+        '204':
+          description: Table deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /data/{namespace}/{table}:
+    post:
+      summary: Create a record
+      description: Create a new record in a table
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordCreate'
+      responses:
+        '201':
+          description: Record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Record'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List records in a table
+      description: Get a list of all records within a table with pagination
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of records per page
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+          description: Field to sort by
+        - in: query
+          name: sort_order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Sort order
+      responses:
+        '200':
+          description: List of records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /data/{namespace}/{table}/{record_id}:
+    get:
+      summary: Get a record by ID
+      description: Retrieve a specific record by its ID
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+        - in: path
+          name: record_id
+          required: true
+          schema:
+            type: string
+          description: ID of the record
+      responses:
+        '200':
+          description: Record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Record'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a record
+      description: Update an existing record
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+        - in: path
+          name: record_id
+          required: true
+          schema:
+            type: string
+          description: ID of the record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordUpdate'
+      responses:
+        '200':
+          description: Record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Record'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a record
+      description: Delete an existing record
+
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+        - in: path
+          name: record_id
+          required: true
+          schema:
+            type: string
+          description: ID of the record
+      responses:
+        '204':
+          description: Record deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
+

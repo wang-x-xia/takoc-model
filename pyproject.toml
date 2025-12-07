@@ -1,0 +1,18 @@
+[project]
+name = "takoc-model"
+version = "0.1.0"
+description = "Local Git storage model for Takoc with HTTP API"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "jsonschema>=4.25.0",
+    "fastapi>=0.124.0",
+    "uvicorn>=0.38.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
