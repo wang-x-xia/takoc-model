@@ -13,25 +13,13 @@ components:
     Namespace:
       type: object
       properties:
-        id:
-          type: string
-          description: Unique identifier for the namespace
         name:
           type: string
           description: Name of the namespace
         description:
           type: string
           description: Description of the namespace
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
       required:
-        - id
         - name
 
     NamespaceCreate:
@@ -58,9 +46,6 @@ components:
     Table:
       type: object
       properties:
-        id:
-          type: string
-          description: Unique identifier for the table
         name:
           type: string
           description: Name of the table
@@ -70,22 +55,9 @@ components:
         description:
           type: string
           description: Description of the table
-        schema:
-          type: object
-          description: JSON Schema for the table
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
       required:
-        - id
         - name
         - namespace
-        - schema
 
     TableCreate:
       type: object
@@ -98,13 +70,8 @@ components:
         description:
           type: string
           description: Description of the table
-        schema:
-          type: object
-          description: JSON Schema for the table
-          minProperties: 1
       required:
         - name
-        - schema
 
     TableUpdate:
       type: object
@@ -112,10 +79,6 @@ components:
         description:
           type: string
           description: Description of the table
-        schema:
-          type: object
-          description: JSON Schema for the table
-          minProperties: 1
 
     Record:
       type: object
@@ -126,21 +89,22 @@ components:
         data:
           type: object
           description: Record data
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
       required:
         - id
         - data
 
     RecordCreate:
       type: object
-      description: Record data to create
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the record
+        data:
+          type: object
+          description: Record data
+      required:
+        - id
+        - data
 
     RecordUpdate:
       type: object
@@ -153,54 +117,7 @@ components:
 
 
 
-    PaginatedResponse:
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of items
-        page:
-          type: integer
-          description: Current page number
-        per_page:
-          type: integer
-          description: Number of items per page
 
-    NamespaceListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            namespaces:
-              type: array
-              items:
-                $ref: '#/components/schemas/Namespace'
-          required:
-            - namespaces
-
-    TableListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            tables:
-              type: array
-              items:
-                $ref: '#/components/schemas/Table'
-          required:
-            - tables
-
-    RecordListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            records:
-              type: array
-              items:
-                $ref: '#/components/schemas/Record'
-          required:
-            - records
 
     ErrorResponse:
       type: object
@@ -263,31 +180,17 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: List all namespaces
-      description: Get a list of all namespaces with pagination
+      description: Get a list of all namespaces
 
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          description: Page number
-        - in: query
-          name: per_page
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-          description: Number of namespaces per page
       responses:
         '200':
           description: List of namespaces
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NamespaceListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Namespace'
         '401':
           description: Unauthorized
           content:
@@ -458,28 +361,15 @@ paths:
           schema:
             type: string
           description: Name of the namespace
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          description: Page number
-        - in: query
-          name: per_page
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-          description: Number of tables per page
       responses:
         '200':
           description: List of tables
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TableListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Table'
         '401':
           description: Unauthorized
           content:
@@ -674,7 +564,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: List records in a table
-      description: Get a list of all records within a table with pagination
+      description: Get a list of all records within a table
 
       parameters:
         - in: path
@@ -690,21 +580,6 @@ paths:
             type: string
           description: Name of the table
         - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          description: Page number
-        - in: query
-          name: per_page
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-          description: Number of records per page
-        - in: query
           name: sort_by
           schema:
             type: string
@@ -718,11 +593,13 @@ paths:
           description: Sort order
       responses:
         '200':
-          description: List of records
+          description: List of record IDs
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RecordListResponse'
+                type: array
+                items:
+                  type: string
         '401':
           description: Unauthorized
           content:
@@ -762,11 +639,12 @@ paths:
           description: ID of the record
       responses:
         '200':
-          description: Record details
+          description: Record data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Record'
+                type: object
+                description: Record data
         '401':
           description: Unauthorized
           content:

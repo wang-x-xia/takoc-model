@@ -9,7 +9,7 @@ from .file_io import Files, FILE_FORMAT
 class TableMeta(BaseModel):
     """Table metadata"""
     records_format: FILE_FORMAT = "yaml"
-    json_schema: str | None = None
+    json_schema: dict | None = None
     path: str | None = None
 
     @classmethod
@@ -53,8 +53,7 @@ class Table:
             read_only=db.read_only,
             format=self._meta.records_format if self._meta.records_format else self._db.global_config.default_format)
 
-        self._schema = self._files.read_file(
-            self._meta.json_schema) if self._meta.json_schema else None
+        self._schema = self._meta.json_schema
 
     @classmethod
     def initialize(cls, db: TakocLocalDb, dir: Path) -> 'Table':

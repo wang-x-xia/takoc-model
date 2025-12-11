@@ -33,7 +33,7 @@ def test_create_table(temp_namespace):
     assert hasattr(table, "_db")
     assert hasattr(table, "_files")
 
-    # 验证表目录已创建
+    # Verify table directory has been created
     table_dir = db.global_config.data_dir / "test_ns" / "test_table"
     assert table_dir.exists()
 
@@ -42,19 +42,19 @@ def test_list_tables(temp_namespace):
     """Test listing all tables"""
     namespace, _ = temp_namespace
 
-    # 初始状态应该没有表
+    # Initially there should be no tables
     initial_tables = namespace.list_tables()
     assert len(initial_tables) == 0
 
-    # 创建两个表
+    # Create two tables
     namespace.create_table(name="table1", description="Table 1")
     namespace.create_table(name="table2", description="Table 2")
 
-    # 验证表列表
+    # Verify table list
     all_tables = namespace.list_tables()
     assert len(all_tables) == 2
 
-    # 检查表名称
+    # Check table names
     assert "table1" in all_tables
     assert "table2" in all_tables
 
@@ -63,10 +63,10 @@ def test_get_table(temp_namespace):
     """Test getting a single table"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     namespace.create_table(name="test_table", description="Test table")
 
-    # 获取表
+    # Get table
     table = namespace.get_table("test_table")
 
     assert table is not None
@@ -77,7 +77,7 @@ def test_get_nonexistent_table(temp_namespace):
     """Test getting non-existent table"""
     namespace, _ = temp_namespace
 
-    # 获取不存在的表应该抛出异常
+    # Getting non-existent table should raise exception
     with pytest.raises(ValueError) as excinfo:
         namespace.get_table("nonexistent_table")
 
@@ -88,13 +88,13 @@ def test_update_table(temp_namespace):
     """Test updating table information"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     namespace.create_table(name="update_test", description="Original description")
 
-    # 更新表 - 验证不会抛出异常
+    # Update table - verify no exception is thrown
     namespace.update_table(name="update_test", description="Updated description")
 
-    # 验证表仍然存在
+    # Verify table still exists
     tables = namespace.list_tables()
     assert "update_test" in tables
 
@@ -103,7 +103,7 @@ def test_update_nonexistent_table(temp_namespace):
     """Test updating non-existent table"""
     namespace, _ = temp_namespace
 
-    # 更新不存在的表应该抛出异常
+    # Updating non-existent table should raise exception
     with pytest.raises(ValueError) as excinfo:
         namespace.update_table(name="nonexistent_table", description="Description")
 
@@ -114,25 +114,25 @@ def test_delete_table(temp_namespace):
     """Test deleting table"""
     namespace, db = temp_namespace
 
-    # 创建表
+    # Create table
     namespace.create_table(name="delete_test", description="To be deleted")
 
-    # 验证表存在
+    # Verify table exists
     all_tables = namespace.list_tables()
     assert len(all_tables) == 1
 
-    # 验证表目录存在
+    # Verify table directory exists
     table_dir = db.global_config.data_dir / "test_ns" / "delete_test"
     assert table_dir.exists()
 
-    # 删除表
+    # Delete table
     namespace.delete_table(name="delete_test")
 
-    # 验证表已删除
+    # Verify table has been deleted
     all_tables = namespace.list_tables()
     assert len(all_tables) == 0
 
-    # 验证表目录已删除
+    # Verify table directory has been deleted
     assert not table_dir.exists()
 
 
@@ -140,7 +140,7 @@ def test_delete_nonexistent_table(temp_namespace):
     """Test deleting non-existent table"""
     namespace, _ = temp_namespace
 
-    # 删除不存在的表应该抛出异常
+    # Deleting non-existent table should raise exception
     with pytest.raises(ValueError) as excinfo:
         namespace.delete_table(name="nonexistent_table")
 
@@ -151,10 +151,10 @@ def test_create_duplicate_table(temp_namespace):
     """Test creating duplicate table"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     namespace.create_table(name="duplicate_table", description="First instance")
 
-    # 再次创建同名表应该抛出异常
+    # Creating same table again should raise exception
     with pytest.raises(ValueError) as excinfo:
         namespace.create_table(name="duplicate_table", description="Second instance")
 
@@ -165,7 +165,7 @@ def test_table_records(temp_namespace):
     """Test table record functionality"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     table = namespace.create_table(name="record_test", description="Record test table")
 
     # Create records
@@ -199,13 +199,13 @@ def test_table_records(temp_namespace):
 
 
 def test_get_nonexistent_record(temp_namespace):
-    """测试获取不存在的记录"""
+    """Test getting non-existent record"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     table = namespace.create_table(name="record_test", description="Record test table")
 
-    # 获取不存在的记录应该抛出异常
+    # Getting non-existent record should raise exception
     with pytest.raises(ValueError) as excinfo:
         table.get_record("nonexistent_record")
 
@@ -213,13 +213,13 @@ def test_get_nonexistent_record(temp_namespace):
 
 
 def test_update_nonexistent_record(temp_namespace):
-    """测试更新不存在的记录"""
+    """Test updating non-existent record"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     table = namespace.create_table(name="record_test", description="Record test table")
 
-    # 更新不存在的记录应该抛出异常
+    # Updating non-existent record should raise exception
     with pytest.raises(ValueError) as excinfo:
         table.update_record("nonexistent_record", {"id": 1, "name": "Test"})
 
@@ -227,13 +227,13 @@ def test_update_nonexistent_record(temp_namespace):
 
 
 def test_delete_nonexistent_record(temp_namespace):
-    """测试删除不存在的记录"""
+    """Test deleting non-existent record"""
     namespace, _ = temp_namespace
 
-    # 创建表
+    # Create table
     table = namespace.create_table(name="record_test", description="Record test table")
 
-    # 删除不存在的记录应该抛出异常
+    # Deleting non-existent record should raise exception
     with pytest.raises(ValueError) as excinfo:
         table.delete_record("nonexistent_record")
 

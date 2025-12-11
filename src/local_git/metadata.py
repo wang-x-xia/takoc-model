@@ -21,6 +21,7 @@ class TableMetadata(BaseModel):
     name: str
     description: str = ""
     path: str = ""
+    json_schema: dict | None = None
 
 
 class TablesMetadata(BaseModel):

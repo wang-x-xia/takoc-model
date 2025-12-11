@@ -51,10 +51,10 @@ def create_namespace(namespace_data: dict[str, Any]):
         if not name:
             raise ValueError("Namespace name is required")
 
-        # 创建命名空间
+        # Create namespace
         namespace = namespaces_manager.create_namespace(name, description)
 
-        # 返回命名空间信息
+        # Return namespace information
         return {
             "id": name,
             "name": name,
@@ -69,11 +69,11 @@ def create_namespace(namespace_data: dict[str, Any]):
 
 
 @app.get("/namespace")
-def list_namespaces(page: int = 1, per_page: int = 20):
+def list_namespaces():
     try:
         namespaces = namespaces_manager.list_namespaces()
 
-        # 格式化输出
+        # Format output
         formatted_namespaces = []
         for ns in namespaces:
             formatted_namespaces.append({
@@ -82,18 +82,7 @@ def list_namespaces(page: int = 1, per_page: int = 20):
                 "description": ns.description
             })
 
-        # 分页
-        total = len(formatted_namespaces)
-        start = (page - 1) * per_page
-        end = start + per_page
-        paginated_namespaces = formatted_namespaces[start:end]
-
-        return {
-            "total": total,
-            "page": page,
-            "per_page": per_page,
-            "namespaces": paginated_namespaces
-        }
+        return formatted_namespaces
     except Exception as e:
         raise HTTPException(status_code=500, detail={
             "error": {"code": "INTERNAL_SERVER_ERROR", "message": str(e)}})
@@ -131,10 +120,10 @@ def update_namespace(namespace_name: str, update_data: dict[str, Any]):
         if description is None:
             raise ValueError("Description is required for update")
 
-        # 更新命名空间
+        # Update namespace
         namespaces_manager.update_namespace(namespace_name, description)
 
-        # 返回更新后的命名空间信息
+        # Return updated namespace information
         return {
             "id": namespace_name,
             "name": namespace_name,
@@ -164,7 +153,7 @@ def delete_namespace(namespace_name: str):
 @app.post("/table/{namespace_name}", status_code=201)
 def create_table(namespace_name: str, table_data: dict[str, Any]):
     try:
-        # 获取命名空间
+        # Get namespace
         namespace = namespaces_manager.get_namespace(namespace_name)
 
         name = table_data.get("name")
@@ -173,10 +162,10 @@ def create_table(namespace_name: str, table_data: dict[str, Any]):
         if not name:
             raise ValueError("Table name is required")
 
-        # 创建表
+        # Create table
         table = namespace.create_table(name, description)
 
-        # 返回表信息
+        # Return table information
         return {
             "id": name,
             "name": name,
@@ -195,15 +184,15 @@ def create_table(namespace_name: str, table_data: dict[str, Any]):
 
 
 @app.get("/table/{namespace_name}")
-def list_tables(namespace_name: str, page: int = 1, per_page: int = 20):
+def list_tables(namespace_name: str):
     try:
-        # 获取命名空间
+        # Get namespace
         namespace = namespaces_manager.get_namespace(namespace_name)
 
-        # 获取表列表
+        # Get table list
         table_names = namespace.list_tables()
 
-        # 格式化输出
+        # Format output
         tables = []
         for table_name in table_names:
             tables.append({
@@ -212,18 +201,7 @@ def list_tables(namespace_name: str, page: int = 1, per_page: int = 20):
                 "namespace": namespace_name
             })
 
-        # 分页
-        total = len(tables)
-        start = (page - 1) * per_page
-        end = start + per_page
-        paginated_tables = tables[start:end]
-
-        return {
-            "total": total,
-            "page": page,
-            "per_page": per_page,
-            "tables": paginated_tables
-        }
+        return tables
     except ValueError as e:
         if "not found" in str(e):
             raise HTTPException(status_code=404, detail={
@@ -235,13 +213,13 @@ def list_tables(namespace_name: str, page: int = 1, per_page: int = 20):
 @app.get("/table/{namespace_name}/{table_name}")
 def get_table(namespace_name: str, table_name: str):
     try:
-        # 获取命名空间
+        # Get namespace
         namespace = namespaces_manager.get_namespace(namespace_name)
 
-        # 获取表
+        # Get table
         table = namespace.get_table(table_name)
 
-        # 返回表信息
+        # Return table information
         return {
             "id": table_name,
             "name": table_name,
@@ -255,17 +233,17 @@ def get_table(namespace_name: str, table_name: str):
 @app.put("/table/{namespace_name}/{table_name}")
 def update_table(namespace_name: str, table_name: str, update_data: dict[str, Any]):
     try:
-        # 获取命名空间
+        # Get namespace
         namespace = namespaces_manager.get_namespace(namespace_name)
 
         description = update_data.get("description")
         if description is None:
             raise ValueError("Description is required for update")
 
-        # 更新表
+        # Update table
         namespace.update_table(table_name, description)
 
-        # 返回更新后的表信息
+        # Return updated table information
         return {
             "id": table_name,
             "name": table_name,
@@ -283,10 +261,10 @@ def update_table(namespace_name: str, table_name: str, update_data: dict[str, An
 @app.delete("/table/{namespace_name}/{table_name}", status_code=204)
 def delete_table(namespace_name: str, table_name: str):
     try:
-        # 获取命名空间
+        # Get namespace
         namespace = namespaces_manager.get_namespace(namespace_name)
 
-        # 删除表
+        # Delete table
         namespace.delete_table(table_name)
         return None
     except ValueError as e:
@@ -300,7 +278,7 @@ def delete_table(namespace_name: str, table_name: str):
 @app.post("/data/{namespace_name}/{table_name}", status_code=201)
 def create_record(namespace_name: str, table_name: str, record_data: dict[str, Any]):
     try:
-        # 获取命名空间和表
+        # Get namespace and table
         namespace = namespaces_manager.get_namespace(namespace_name)
         table = namespace.get_table(table_name)
 
@@ -312,10 +290,10 @@ def create_record(namespace_name: str, table_name: str, record_data: dict[str, A
         if not data:
             raise ValueError("Record data is required")
 
-        # 创建记录
+        # Create record
         table.create_record(record_id, data)
 
-        # 返回记录信息
+        # Return record information
         return {
             "id": record_id,
             "data": data
@@ -332,36 +310,16 @@ def create_record(namespace_name: str, table_name: str, record_data: dict[str, A
 
 
 @app.get("/data/{namespace_name}/{table_name}")
-def list_records(namespace_name: str, table_name: str, page: int = 1, per_page: int = 20):
+def list_records(namespace_name: str, table_name: str):
     try:
-        # 获取命名空间和表
+        # Get namespace and table
         namespace = namespaces_manager.get_namespace(namespace_name)
         table = namespace.get_table(table_name)
 
-        # 获取记录列表
+        # Get record list
         record_ids = table.list_records()
 
-        # 获取完整记录数据
-        records = []
-        for record_id in record_ids:
-            record_data = table.get_record(record_id)
-            records.append({
-                "id": record_id,
-                "data": record_data
-            })
-
-        # 分页
-        total = len(records)
-        start = (page - 1) * per_page
-        end = start + per_page
-        paginated_records = records[start:end]
-
-        return {
-            "total": total,
-            "page": page,
-            "per_page": per_page,
-            "records": paginated_records
-        }
+        return record_ids
     except ValueError as e:
         if "not found" in str(e):
             raise HTTPException(status_code=404, detail={
@@ -373,18 +331,15 @@ def list_records(namespace_name: str, table_name: str, page: int = 1, per_page: 
 @app.get("/data/{namespace_name}/{table_name}/{record_id}")
 def get_record(namespace_name: str, table_name: str, record_id: str):
     try:
-        # 获取命名空间和表
+        # Get namespace and table
         namespace = namespaces_manager.get_namespace(namespace_name)
         table = namespace.get_table(table_name)
 
-        # 获取记录
+        # Get record
         record_data = table.get_record(record_id)
 
-        # 返回记录信息
-        return {
-            "id": record_id,
-            "data": record_data
-        }
+        # Return only record data
+        return record_data
     except ValueError as e:
         raise HTTPException(status_code=404, detail={
             "error": {"code": "NOT_FOUND", "message": str(e)}})
@@ -393,7 +348,7 @@ def get_record(namespace_name: str, table_name: str, record_id: str):
 @app.put("/data/{namespace_name}/{table_name}/{record_id}")
 def update_record(namespace_name: str, table_name: str, record_id: str, update_data: dict[str, Any]):
     try:
-        # 获取命名空间和表
+        # Get namespace and table
         namespace = namespaces_manager.get_namespace(namespace_name)
         table = namespace.get_table(table_name)
 
@@ -401,10 +356,10 @@ def update_record(namespace_name: str, table_name: str, record_id: str, update_d
         if data is None:
             raise ValueError("Record data is required")
 
-        # 更新记录
+        # Update record
         table.update_record(record_id, data)
 
-        # 返回更新后的记录信息
+        # Return updated record information
         return {
             "id": record_id,
             "data": data
@@ -420,11 +375,11 @@ def update_record(namespace_name: str, table_name: str, record_id: str, update_d
 @app.delete("/data/{namespace_name}/{table_name}/{record_id}", status_code=204)
 def delete_record(namespace_name: str, table_name: str, record_id: str):
     try:
-        # 获取命名空间和表
+        # Get namespace and table
         namespace = namespaces_manager.get_namespace(namespace_name)
         table = namespace.get_table(table_name)
 
-        # 删除记录
+        # Delete record
         table.delete_record(record_id)
         return None
     except ValueError as e:
