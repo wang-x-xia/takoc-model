@@ -1,8 +1,9 @@
-import yaml
 import json
 import os
-from typing import Any, Literal
 from pathlib import Path
+from typing import Any, Literal
+
+import yaml
 
 FILE_FORMAT = Literal["yaml", "json"]
 

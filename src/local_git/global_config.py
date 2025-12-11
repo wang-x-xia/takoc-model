@@ -1,6 +1,8 @@
 from pathlib import Path
-from .file_io import Files, FILE_FORMAT
+
 from pydantic import BaseModel
+
+from .file_io import Files, FILE_FORMAT
 
 
 class GlobalConfig(BaseModel):
@@ -10,6 +12,8 @@ class GlobalConfig(BaseModel):
     # Relative path to the config directory
     data_path: str = ""
     default_format: FILE_FORMAT = "yaml"
+    # Relative path to the metadata directory inside data directory
+    metadata_dir: str = "takoc"
 
     @classmethod
     def load(cls, files: Files) -> "GlobalConfig":
@@ -32,6 +36,11 @@ class GlobalConfig(BaseModel):
     def data_dir(self) -> Path:
         """Get absolute data directory path"""
         return self.config_dir / self.data_path
+
+    @property
+    def metadata_path(self) -> Path:
+        """Get absolute metadata directory path"""
+        return self.data_dir / self.metadata_dir
 
     def save(self, files: Files) -> None:
         """Save configuration to file

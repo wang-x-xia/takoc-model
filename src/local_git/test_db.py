@@ -1,6 +1,7 @@
-import pytest
 import tempfile
-from pathlib import Path
+
+import pytest
+
 from .db import TakocLocalDb
 from .global_config import GlobalConfig
 

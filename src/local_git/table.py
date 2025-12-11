@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
+
 from .db import TakocLocalDb
 from .file_io import Files, FILE_FORMAT
 
@@ -30,19 +31,18 @@ class RecordPos(BaseModel):
 
 
 class Records(BaseModel):
-    records: List[RecordPos] = []
+    records: list[RecordPos] = []
 
 
 class Table:
     """Table APIs"""
 
-    def __init__(self, db: TakocLocalDb, dir: Path, read_only: bool = False):
+    def __init__(self, db: TakocLocalDb, dir: Path):
         """Initialize table
 
         Args:
             db: TakocLocalDb instance
             dir: Table directory path
-            read_only: Whether the table is read-only
         """
         self._db = db
         self._dir = dir
@@ -50,7 +50,7 @@ class Table:
 
         self._files = Files(
             dir=self._dir / self._meta.path if self._meta.path else self._dir,
-            read_only=read_only,
+            read_only=db.read_only,
             format=self._meta.records_format if self._meta.records_format else self._db.global_config.default_format)
 
         self._schema = self._files.read_file(
@@ -83,7 +83,7 @@ class Table:
         files.write_file("records", empty_records.model_dump())
 
         # Create and return table instance
-        return cls(db=db, dir=dir, read_only=False)
+        return cls(db=db, dir=dir)
 
     @property
     def json_schema(self) -> dict | None:

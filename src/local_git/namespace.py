@@ -1,55 +1,33 @@
-from pathlib import Path
 import shutil
-from typing import Any, Dict, List
-
-from pydantic import BaseModel
+from pathlib import Path
 
 from .db import TakocLocalDb
 from .file_io import Files
 
 
-class TableMetadata(BaseModel):
-    """Table metadata class"""
-    name: str
-    description: str = ""
-    path: str = ""
-
-
-class TablesMetadata(BaseModel):
-    """Table list class"""
-    tables: list[TableMetadata] = []
-
-
 class Namespace:
     """Namespace APIs"""
 
-    def __init__(self, db: TakocLocalDb, dir: Path, read_only: bool = False):
+    def __init__(self, db: TakocLocalDb, name: str, dir: Path):
         """Initialize namespace
 
         Args:
             db: TakocLocalDb instance
+            name: Namespace name
+            dir: Namespace directory path
         """
         self._db = db
+        self._name = name
         self._files = Files(
-            dir=dir, read_only=read_only, format=db.global_config.default_format)
-        self.tables_file = "tables"  # Without extension
-
-    def _load_tables(self) -> TablesMetadata:
-        """Load tables list"""
-        data = self._files.read_file(self.tables_file)
-        return TablesMetadata(**data) if data else TablesMetadata()
-
-    def _save_tables(self, tables_data: TablesMetadata) -> None:
-        """Save tables list"""
-        self._files.write_file(
-            self.tables_file, tables_data.model_dump())
+            dir=dir, read_only=db.read_only, format=db.global_config.default_format)
 
     @classmethod
-    def initialize(cls, db: TakocLocalDb,  dir: Path) -> 'Namespace':
+    def initialize(cls, db: TakocLocalDb, name: str, dir: Path) -> 'Namespace':
         """Create new namespace
 
         Args:
             db: TakocLocalDb instance
+            name: Namespace name
             dir: Namespace directory path
 
         Returns:
@@ -59,13 +37,20 @@ class Namespace:
         dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize namespace file manager
-        namespace = cls(db=db, dir=dir, read_only=False)
+        namespace = cls(db=db, name=name, dir=dir)
 
-        # Create initial tables list file
-        tables_data = TablesMetadata()
-        namespace._save_tables(tables_data)
+        # No need to create initial tables file - metadata will handle it
 
         return namespace
+
+    @property
+    def name(self) -> str:
+        """Get namespace name
+
+        Returns:
+            Namespace name
+        """
+        return self._name
 
     def create_table(self, name: str, description: str = "") -> 'Table':
         """Create new table
@@ -81,23 +66,9 @@ class Namespace:
             ValueError: Table already exists
         """
         from .table import Table
-        table_info = TableMetadata(
-            name=name,
-            description=description,
-            path=name,
-        )
 
-        # Load existing tables list
-        tables_data = self._load_tables()
-
-        # Check if table already exists
-        for table in tables_data.tables:
-            if table.name == name:
-                raise ValueError(f"Table '{name}' already exists in namespace")
-
-        # Add new table
-        tables_data.tables.append(table_info)
-        self._save_tables(tables_data)
+        # Use metadata to add table
+        self._db.metadata.add_table(self._name, name, description)
 
         # Create table directory
         table_dir = self._files.dir / name
@@ -105,14 +76,14 @@ class Namespace:
         # Use Table class method to create table
         return Table.initialize(self._db, table_dir)
 
-    def list_tables(self) -> List[str]:
+    def list_tables(self) -> list[str]:
         """Get list of all tables in namespace
 
         Returns:
             List of table names
         """
-        tables_data = self._load_tables()
-        return [table.name for table in tables_data.tables]
+        tables = self._db.metadata.get_tables(self._name)
+        return [table.name for table in tables]
 
     def get_table(self, name: str):
         """Get single table instance
@@ -127,11 +98,11 @@ class Namespace:
             ValueError: Table not found
         """
         from .table import Table
-        tables_data = self._load_tables()
-        for table in tables_data.tables:
+        tables = self._db.metadata.get_tables(self._name)
+        for table in tables:
             if table.name == name:
                 table_dir = self._files.dir / table.path
-                return Table(self._db, dir=table_dir, read_only=False)
+                return Table(self._db, dir=table_dir)
         raise ValueError(f"Table '{name}' not found in namespace")
 
     def update_table(self, name: str, description: str) -> None:
@@ -144,17 +115,8 @@ class Namespace:
         Raises:
             ValueError: Table not found
         """
-        tables_data = self._load_tables()
-
-        for table in tables_data.tables:
-            if table.name == name:
-                table.description = description
-                self._save_tables(tables_data)
-
-                # Table description already updated in tables.yaml, no need to update config file
-
-                return
-        raise ValueError(f"Table '{name}' not found in namespace")
+        # Use metadata to update table
+        self._db.metadata.update_table(self._name, name, description)
 
     def delete_table(self, name: str) -> None:
         """Delete table
@@ -165,17 +127,8 @@ class Namespace:
         Raises:
             ValueError: Table not found
         """
-        tables_data = self._load_tables()
-
-        # Check if table exists
-        after_delete_tables = [
-            table for table in tables_data.tables if table.name != name]
-
-        if len(after_delete_tables) == len(tables_data.tables):
-            raise ValueError(f"Table '{name}' not found in namespace")
-
-        tables_data.tables = after_delete_tables
-        self._save_tables(tables_data)
+        # Use metadata to delete table
+        self._db.metadata.delete_table(self._name, name)
 
         # Delete table directory
         table_dir = self._files.dir / name

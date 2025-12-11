@@ -227,7 +227,8 @@ paths:
   /namespace:
     post:
       summary: Create a new namespace
-      description: Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management.
+      description:
+        Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management.
 
       requestBody:
         required: true
@@ -712,7 +713,7 @@ paths:
           name: sort_order
           schema:
             type: string
-            enum: [asc, desc]
+            enum: [ asc, desc ]
             default: asc
           description: Sort order
       responses:

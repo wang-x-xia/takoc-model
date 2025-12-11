@@ -1,0 +1,244 @@
+from pydantic import BaseModel
+
+from .db import TakocLocalDb
+from .file_io import Files
+
+
+class NamespaceMetadata(BaseModel):
+    """Namespace metadata class"""
+    name: str
+    description: str = ""
+    path: str = ""
+
+
+class NamespacesMetadata(BaseModel):
+    """Namespace list class"""
+    namespaces: list[NamespaceMetadata] = []
+
+
+class TableMetadata(BaseModel):
+    """Table metadata class"""
+    name: str
+    description: str = ""
+    path: str = ""
+
+
+class TablesMetadata(BaseModel):
+    """Table list class"""
+    tables: list[TableMetadata] = []
+
+
+class Metadata:
+    """
+    Use this class to manage the Takoc metadata.
+
+    Including the Takoc namespaces, tables.
+
+    This API access the fixed 'takoc' metadata folder within the data directory.
+    """
+
+    def __init__(self, db: TakocLocalDb):
+        self.db = db
+        # Use fixed metadata directory 'takoc' inside data directory
+        self.metadata_dir = db.global_config.data_dir / "takoc"
+        self.metadata_dir.mkdir(parents=True, exist_ok=True)
+
+        # Initialize file manager for metadata folder
+        self._files = Files(
+            dir=self.metadata_dir,
+            read_only=db.read_only,
+            format=db.global_config.default_format
+        )
+
+    def get_namespaces(self) -> list[NamespaceMetadata]:
+        """
+        Get metadata for all namespaces.
+
+        Returns:
+            List of NamespaceMetadata objects.
+        """
+        data = self._files.read_file("namespaces")
+        namespaces_data = NamespacesMetadata(
+            **data) if data else NamespacesMetadata()
+        return namespaces_data.namespaces
+
+    def add_namespace(self, name: str, description: str = "") -> None:
+        """
+        Add a new namespace to metadata.
+
+        Args:
+            name: Namespace name
+            description: Namespace description
+        """
+        # Load existing namespaces
+        data = self._files.read_file("namespaces")
+        namespaces_data = NamespacesMetadata(
+            **data) if data else NamespacesMetadata()
+
+        # Check if namespace already exists
+        for ns in namespaces_data.namespaces:
+            if ns.name == name:
+                raise ValueError(f"Namespace '{name}' already exists")
+
+        # Add new namespace
+        new_namespace = NamespaceMetadata(
+            name=name, description=description, path=name)
+        namespaces_data.namespaces.append(new_namespace)
+
+        # Save updated namespaces
+        self._files.write_file("namespaces", namespaces_data.model_dump())
+
+    def update_namespace(self, name: str, description: str) -> None:
+        """
+        Update an existing namespace in metadata.
+
+        Args:
+            name: Namespace name
+            description: New namespace description
+        """
+        # Load existing namespaces
+        data = self._files.read_file("namespaces")
+        namespaces_data = NamespacesMetadata(
+            **data) if data else NamespacesMetadata()
+
+        # Find and update the namespace
+        found = False
+        for ns in namespaces_data.namespaces:
+            if ns.name == name:
+                ns.description = description
+                found = True
+                break
+
+        if not found:
+            raise ValueError(f"Namespace '{name}' not found")
+
+        # Save updated namespaces
+        self._files.write_file("namespaces", namespaces_data.model_dump())
+
+    def delete_namespace_meta(self, name: str) -> None:
+        """
+        Delete namespace metadata.
+
+        Args:
+            name: Namespace name
+        """
+        # Load existing namespaces
+        data = self._files.read_file("namespaces")
+        namespaces_data = NamespacesMetadata(
+            **data) if data else NamespacesMetadata()
+
+        # Remove the namespace
+        original_count = len(namespaces_data.namespaces)
+        namespaces_data.namespaces = [
+            ns for ns in namespaces_data.namespaces if ns.name != name]
+
+        if len(namespaces_data.namespaces) == original_count:
+            raise ValueError(f"Namespace '{name}' not found")
+
+        # Save updated namespaces
+        self._files.write_file("namespaces", namespaces_data.model_dump())
+
+        # Also delete the tables file for this namespace if it exists
+        tables_file = f"{name}_tables"
+        if self._files.file_info(tables_file):
+            self._files.delete_file(tables_file)
+
+    def get_tables(self, namespace: str) -> list[TableMetadata]:
+        """
+        Get metadata for all tables in a specific namespace.
+
+        Args:
+            namespace: Name of the namespace.
+
+        Returns:
+            List of TableMetadata objects.
+        """
+        table_file = f"{namespace}_tables"
+        data = self._files.read_file(table_file)
+        tables_data = TablesMetadata(**data) if data else TablesMetadata()
+        return tables_data.tables
+
+    def add_table(self, namespace: str, name: str, description: str = "") -> None:
+        """
+        Add a new table to a namespace's metadata.
+
+        Args:
+            namespace: Namespace name
+            name: Table name
+            description: Table description
+        """
+        table_file = f"{namespace}_tables"
+
+        # Load existing tables
+        data = self._files.read_file(table_file)
+        tables_data = TablesMetadata(**data) if data else TablesMetadata()
+
+        # Check if table already exists
+        for table in tables_data.tables:
+            if table.name == name:
+                raise ValueError(
+                    f"Table '{name}' already exists in namespace '{namespace}'")
+
+        # Add new table
+        new_table = TableMetadata(
+            name=name, description=description, path=name)
+        tables_data.tables.append(new_table)
+
+        # Save updated tables
+        self._files.write_file(table_file, tables_data.model_dump())
+
+    def update_table(self, namespace: str, name: str, description: str) -> None:
+        """
+        Update an existing table in a namespace's metadata.
+
+        Args:
+            namespace: Namespace name
+            name: Table name
+            description: New table description
+        """
+        table_file = f"{namespace}_tables"
+
+        # Load existing tables
+        data = self._files.read_file(table_file)
+        tables_data = TablesMetadata(**data) if data else TablesMetadata()
+
+        # Find and update the table
+        found = False
+        for table in tables_data.tables:
+            if table.name == name:
+                table.description = description
+                found = True
+                break
+
+        if not found:
+            raise ValueError(
+                f"Table '{name}' not found in namespace '{namespace}'")
+
+        # Save updated tables
+        self._files.write_file(table_file, tables_data.model_dump())
+
+    def delete_table(self, namespace: str, name: str) -> None:
+        """
+        Delete a table from a namespace's metadata.
+
+        Args:
+            namespace: Namespace name
+            name: Table name
+        """
+        table_file = f"{namespace}_tables"
+
+        # Load existing tables
+        data = self._files.read_file(table_file)
+        tables_data = TablesMetadata(**data) if data else TablesMetadata()
+
+        # Remove the table
+        original_count = len(tables_data.tables)
+        tables_data.tables = [
+            table for table in tables_data.tables if table.name != name]
+
+        if len(tables_data.tables) == original_count:
+            raise ValueError(
+                f"Table '{name}' not found in namespace '{namespace}'")
+
+        # Save updated tables
+        self._files.write_file(table_file, tables_data.model_dump())
