@@ -7,8 +7,15 @@ servers:
   - url: /api/v1
     description: Default API server
 
-components:
+tags:
+  - name: Namespace
+    description: Operations related to namespace management
+  - name: Table
+    description: Operations related to table management within namespaces
+  - name: Record
+    description: Operations related to record management within tables
 
+components:
   schemas:
     Namespace:
       type: object
@@ -21,7 +28,6 @@ components:
           description: Description of the namespace
       required:
         - name
-
     NamespaceCreate:
       type: object
       properties:
@@ -35,14 +41,12 @@ components:
           description: Description of the namespace
       required:
         - name
-
     NamespaceUpdate:
       type: object
       properties:
         description:
           type: string
           description: Description of the namespace
-
     Table:
       type: object
       properties:
@@ -58,7 +62,6 @@ components:
       required:
         - name
         - namespace
-
     TableCreate:
       type: object
       properties:
@@ -72,81 +75,36 @@ components:
           description: Description of the table
       required:
         - name
-
     TableUpdate:
       type: object
       properties:
         description:
           type: string
           description: Description of the table
-
-    Record:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the record
-        data:
-          type: object
-          description: Record data
-      required:
-        - id
-        - data
-
-    RecordCreate:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the record
-        data:
-          type: object
-          description: Record data
-      required:
-        - id
-        - data
-
-    RecordUpdate:
-      type: object
-      properties:
-        data:
-          type: object
-          description: Record data to update
-      required:
-        - data
-
-
-
-
-
     ErrorResponse:
       type: object
       properties:
-        error:
+        message:
+          type: string
+          description: Error message for human consumption
+        type:
+          type: string
+          description: Error type for programmatic handling
+        data:
           type: object
-          properties:
-            code:
-              type: string
-              description: Error code
-            message:
-              type: string
-              description: Error message
-            details:
-              type: string
-              description: Additional error details
-          required:
-            - code
-            - message
+          description: Additional error data
+          nullable: true
       required:
-        - error
+        - message
+        - type
 
 paths:
   /namespace:
     post:
+      tags: [ "Namespace" ]
       summary: Create a new namespace
       description:
-        Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management.
-
+        "Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management."
       requestBody:
         required: true
         content:
@@ -179,9 +137,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
+      tags: [ "Namespace" ]
       summary: List all namespaces
       description: Get a list of all namespaces
-
       responses:
         '200':
           description: List of namespaces
@@ -200,6 +158,7 @@ paths:
 
   /namespace/{namespace}:
     get:
+      tags: [ "Namespace" ]
       summary: Get a namespace by name
       description: Retrieve a specific namespace by its name
       parameters:
@@ -229,6 +188,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
+      tags: [ "Namespace" ]
       summary: Update a namespace
       description: Update an existing namespace
       parameters:
@@ -270,6 +230,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      tags: [ "Namespace" ]
       summary: Delete a namespace
       description: Delete an existing namespace
       parameters:
@@ -297,9 +258,9 @@ paths:
 
   /table/{namespace}:
     post:
+      tags: [ "Table" ]
       summary: Create a new table
       description: Create a new table within a namespace
-
       parameters:
         - in: path
           name: namespace
@@ -351,9 +312,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
+      tags: [ "Table" ]
       summary: List tables in a namespace
       description: Get a list of all tables within a namespace
-
       parameters:
         - in: path
           name: namespace
@@ -385,9 +346,9 @@ paths:
 
   /table/{namespace}/{table}:
     get:
+      tags: [ "Table" ]
       summary: Get a table by name
       description: Retrieve a specific table by its name
-
       parameters:
         - in: path
           name: namespace
@@ -421,9 +382,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
+      tags: [ "Table" ]
       summary: Update a table
       description: Update an existing table
-
       parameters:
         - in: path
           name: namespace
@@ -475,9 +436,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      tags: [ "Table" ]
       summary: Delete a table
       description: Delete an existing table
-
       parameters:
         - in: path
           name: namespace
@@ -508,10 +469,10 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /data/{namespace}/{table}:
-    post:
-      summary: Create a record
-      description: Create a new record in a table
-
+    get:
+      tags: [ "Record" ]
+      summary: List records in a table
+      description: Get a list of all records within a table
       parameters:
         - in: path
           name: namespace
@@ -525,19 +486,60 @@ paths:
           schema:
             type: string
           description: Name of the table
+      responses:
+        '200':
+          description: List of record IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /data/{namespace}/{table}/{record_id}:
+    post:
+      tags: [ "Record" ]
+      summary: Create a record
+      description: Create a new record in a table
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
+        - in: path
+          name: record_id
+          required: true
+          schema:
+            type: string
+          description: ID of the record
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RecordCreate'
+            schema: { }
       responses:
         '201':
           description: Record created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Record'
         '400':
           description: Bad request
           content:
@@ -563,61 +565,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
-      summary: List records in a table
-      description: Get a list of all records within a table
-
-      parameters:
-        - in: path
-          name: namespace
-          required: true
-          schema:
-            type: string
-          description: Name of the namespace
-        - in: path
-          name: table
-          required: true
-          schema:
-            type: string
-          description: Name of the table
-        - in: query
-          name: sort_by
-          schema:
-            type: string
-          description: Field to sort by
-        - in: query
-          name: sort_order
-          schema:
-            type: string
-            enum: [ asc, desc ]
-            default: asc
-          description: Sort order
-      responses:
-        '200':
-          description: List of record IDs
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /data/{namespace}/{table}/{record_id}:
-    get:
+      tags: [ "Record" ]
       summary: Get a record by ID
       description: Retrieve a specific record by its ID
-
       parameters:
         - in: path
           name: namespace
@@ -642,9 +592,7 @@ paths:
           description: Record data
           content:
             application/json:
-              schema:
-                type: object
-                description: Record data
+              schema: { }
         '401':
           description: Unauthorized
           content:
@@ -658,9 +606,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
+      tags: [ "Record" ]
       summary: Update a record
       description: Update an existing record
-
       parameters:
         - in: path
           name: namespace
@@ -684,15 +632,10 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RecordUpdate'
+            schema: { }
       responses:
         '200':
           description: Record updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Record'
         '400':
           description: Bad request
           content:
@@ -718,9 +661,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      tags: [ "Record" ]
       summary: Delete a record
       description: Delete an existing record
-
       parameters:
         - in: path
           name: namespace
@@ -755,8 +698,3 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-
-
-
-

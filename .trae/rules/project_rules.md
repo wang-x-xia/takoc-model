@@ -1,5 +1,6 @@
 # Project Rules
 
-- You can use whatever language you want, but please use English in the code and comments.
-- Always use uv commands, never call python or pip directly.
+- Only use English in the code and comments.
+- Always use uv commands, don't call python or pip directly.
 - Use relative import in the python code.
+- Directly use dict or list, don't import from typing module.
