@@ -4,8 +4,8 @@ from fastapi import HTTPException, Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .v1 import (
-    IDatabase, ITable, NamespaceCreate, NamespaceUpdate, Namespace,
-    TableCreate, TableUpdate, Table, ErrorResponse, INamespace,
+    IDatabase, ITable, NamespaceCreateRequest, NamespaceUpdateRequest, NamespaceData,
+    TableCreateRequest, TableUpdateRequest, TableData, ErrorResponse, INamespace,
 )
 
 app = FastAPI(
@@ -38,21 +38,21 @@ def get_database() -> IDatabase:
 # Namespace endpoints
 
 
-@app.post("/namespace", response_model=Namespace, status_code=201, tags=["Namespace"])
+@app.post("/namespace", response_model=NamespaceData, status_code=201, tags=["Namespace"])
 def create_namespace(
-        namespace_data: NamespaceCreate,
+        namespace_data: NamespaceCreateRequest,
         db: IDatabase = Depends(get_database)
 ):
     namespaces = db.namespaces
     namespaces.create_namespace(namespace_data)
 
-    return Namespace(
+    return NamespaceData(
         name=namespace_data.name,
         description=namespace_data.description
     )
 
 
-@app.get("/namespace", response_model=list[Namespace], tags=["Namespace"])
+@app.get("/namespace", response_model=list[NamespaceData], tags=["Namespace"])
 def list_namespaces(
         db: IDatabase = Depends(get_database)
 ):
@@ -60,7 +60,7 @@ def list_namespaces(
     return namespaces.list_namespaces()
 
 
-@app.get("/namespace/{namespace}", response_model=Namespace, tags=["Namespace"])
+@app.get("/namespace/{namespace}", response_model=NamespaceData, tags=["Namespace"])
 def get_namespace(
         namespace: str,
         db: IDatabase = Depends(get_database)
@@ -76,19 +76,16 @@ def get_namespace(
     return namespaces_data
 
 
-@app.put("/namespace/{namespace}", response_model=Namespace, tags=["Namespace"])
+@app.put("/namespace/{namespace}", tags=["Namespace"])
 def update_namespace(
         namespace: str,
-        update_data: NamespaceUpdate,
+        update_data: NamespaceUpdateRequest,
         db: IDatabase = Depends(get_database)
 ):
     namespaces = db.namespaces
-    namespaces.update_namespace(update_data)
+    namespaces.update_namespace(namespace, update_data)
 
-    return Namespace(
-        name=namespace,
-        description=update_data.description
-    )
+    return None
 
 
 @app.delete("/namespace/{namespace}", status_code=204, tags=["Namespace"])
@@ -115,22 +112,22 @@ def load_namespace(db: IDatabase, namespace: str):
     return namespace_obj
 
 
-@app.post("/table/{namespace}", response_model=Table, status_code=201, tags=["Table"])
+@app.post("/table/{namespace}", response_model=TableData, status_code=201, tags=["Table"])
 def create_table(
         namespace: str,
-        table_data: TableCreate,
+        table_data: TableCreateRequest,
         db: IDatabase = Depends(get_database)
 ):
     load_namespace(db, namespace).create_table(table_data)
 
-    return Table(
+    return TableData(
         name=table_data.name,
         description=table_data.description,
         namespace=namespace
     )
 
 
-@app.get("/table/{namespace}", response_model=list[Table], tags=["Table"])
+@app.get("/table/{namespace}", response_model=list[TableData], tags=["Table"])
 def list_tables(
         namespace: str,
         db: IDatabase = Depends(get_database)
@@ -139,7 +136,7 @@ def list_tables(
     return namespace_obj.list_tables()
 
 
-def get_table_meta(db: IDatabase, namespace: str, table: str) -> tuple[INamespace, Table]:
+def get_table_meta(db: IDatabase, namespace: str, table: str) -> tuple[INamespace, TableData]:
     namespace_obj = db.load_namespace(namespace)
     if namespace_obj is None:
         # Due to the error handler, here won't call load_namespace again
@@ -158,7 +155,7 @@ def get_table_meta(db: IDatabase, namespace: str, table: str) -> tuple[INamespac
     return namespace_obj, table_obj
 
 
-@app.get("/table/{namespace}/{table}", response_model=Table, tags=["Table"])
+@app.get("/table/{namespace}/{table}", response_model=TableData, tags=["Table"])
 def get_table(
         namespace: str,
         table: str,
@@ -168,21 +165,17 @@ def get_table(
     return table_obj
 
 
-@app.put("/table/{namespace}/{table}", response_model=Table, tags=["Table"])
+@app.put("/table/{namespace}/{table}", tags=["Table"])
 def update_table(
         namespace: str,
         table: str,
-        update_data: TableUpdate,
+        update_data: TableUpdateRequest,
         db: IDatabase = Depends(get_database)
 ):
     namespace_obj, _ = get_table_meta(db, namespace, table)
-    namespace_obj.update_table(update_data)
+    namespace_obj.update_table(table, update_data)
 
-    return Table(
-        name=table,
-        description=update_data.description,
-        namespace=namespace
-    )
+    return None
 
 
 @app.delete("/table/{namespace}/{table}", status_code=204, tags=["Table"])

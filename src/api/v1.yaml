@@ -17,7 +17,7 @@ tags:
 
 components:
   schemas:
-    Namespace:
+    NamespaceData:
       type: object
       properties:
         name:
@@ -28,7 +28,7 @@ components:
           description: Description of the namespace
       required:
         - name
-    NamespaceCreate:
+    NamespaceCreateRequest:
       type: object
       properties:
         name:
@@ -41,13 +41,13 @@ components:
           description: Description of the namespace
       required:
         - name
-    NamespaceUpdate:
+    NamespaceUpdateRequest:
       type: object
       properties:
         description:
           type: string
           description: Description of the namespace
-    Table:
+    TableData:
       type: object
       properties:
         name:
@@ -62,7 +62,7 @@ components:
       required:
         - name
         - namespace
-    TableCreate:
+    TableCreateRequest:
       type: object
       properties:
         name:
@@ -75,7 +75,7 @@ components:
           description: Description of the table
       required:
         - name
-    TableUpdate:
+    TableUpdateRequest:
       type: object
       properties:
         description:
@@ -103,58 +103,57 @@ paths:
     post:
       tags: [ "Namespace" ]
       summary: Create a new namespace
-      description:
-        "Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management."
+      description: "Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management."
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NamespaceCreate'
+              $ref: "#/components/schemas/NamespaceCreateRequest"
       responses:
-        '201':
+        "201":
           description: Namespace created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Namespace'
-        '400':
+                $ref: "#/components/schemas/NamespaceData"
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Conflict
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags: [ "Namespace" ]
       summary: List all namespaces
       description: Get a list of all namespaces
       responses:
-        '200':
+        "200":
           description: List of namespaces
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Namespace'
-        '401':
+                  $ref: "#/components/schemas/NamespaceData"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /namespace/{namespace}:
     get:
@@ -169,24 +168,24 @@ paths:
             type: string
           description: Name of the namespace
       responses:
-        '200':
+        "200":
           description: Namespace details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Namespace'
-        '401':
+                $ref: "#/components/schemas/NamespaceData"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       tags: [ "Namespace" ]
       summary: Update a namespace
@@ -203,32 +202,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NamespaceUpdate'
+              $ref: "#/components/schemas/NamespaceUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Namespace updated successfully
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Namespace'
-        '400':
+              schema: { }
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       tags: [ "Namespace" ]
       summary: Delete a namespace
@@ -241,20 +239,20 @@ paths:
             type: string
           description: Name of the namespace
       responses:
-        '204':
+        "204":
           description: Namespace deleted successfully
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /table/{namespace}:
     post:
@@ -273,44 +271,44 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TableCreate'
+              $ref: "#/components/schemas/TableCreateRequest"
       responses:
-        '201':
+        "201":
           description: Table created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Table'
-        '400':
+                $ref: "#/components/schemas/TableData"
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Namespace not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Conflict
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable entity
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags: [ "Table" ]
       summary: List tables in a namespace
@@ -323,26 +321,26 @@ paths:
             type: string
           description: Name of the namespace
       responses:
-        '200':
+        "200":
           description: List of tables
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Table'
-        '401':
+                  $ref: "#/components/schemas/TableData"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Namespace not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /table/{namespace}/{table}:
     get:
@@ -363,24 +361,24 @@ paths:
             type: string
           description: Name of the table
       responses:
-        '200':
+        "200":
           description: Table details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Table'
-        '401':
+                $ref: "#/components/schemas/TableData"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       tags: [ "Table" ]
       summary: Update a table
@@ -403,38 +401,37 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TableUpdate'
+              $ref: "#/components/schemas/TableUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Table updated successfully
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Table'
-        '400':
+              schema: { }
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable entity
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       tags: [ "Table" ]
       summary: Delete a table
@@ -453,20 +450,20 @@ paths:
             type: string
           description: Name of the table
       responses:
-        '204':
+        "204":
           description: Table deleted successfully
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /data/{namespace}/{table}:
     get:
@@ -487,7 +484,7 @@ paths:
             type: string
           description: Name of the table
       responses:
-        '200':
+        "200":
           description: List of record IDs
           content:
             application/json:
@@ -495,18 +492,18 @@ paths:
                 type: array
                 items:
                   type: string
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /data/{namespace}/{table}/{record_id}:
     post:
@@ -538,32 +535,32 @@ paths:
           application/json:
             schema: { }
       responses:
-        '201':
+        "201":
           description: Record created successfully
-        '400':
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable entity
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags: [ "Record" ]
       summary: Get a record by ID
@@ -588,23 +585,23 @@ paths:
             type: string
           description: ID of the record
       responses:
-        '200':
+        "200":
           description: Record data
           content:
             application/json:
               schema: { }
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       tags: [ "Record" ]
       summary: Update a record
@@ -634,32 +631,32 @@ paths:
           application/json:
             schema: { }
       responses:
-        '200':
+        "200":
           description: Record updated successfully
-        '400':
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable entity
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       tags: [ "Record" ]
       summary: Delete a record
@@ -684,17 +681,17 @@ paths:
             type: string
           description: ID of the record
       responses:
-        '204':
+        "204":
           description: Record deleted successfully
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"

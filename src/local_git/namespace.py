@@ -3,9 +3,10 @@ from pathlib import Path
 
 from .db import TakocLocalDb
 from .file_io import Files
+from ..api.v1 import INamespace, ITable, TableData, TableCreateRequest, TableUpdateRequest
 
 
-class Namespace:
+class Namespace(INamespace):
     """Namespace APIs"""
 
     def __init__(self, db: TakocLocalDb, name: str, dir: Path):
@@ -52,15 +53,14 @@ class Namespace:
         """
         return self._name
 
-    def create_table(self, name: str, description: str = "") -> 'Table':
+    def create_table(self, create: TableCreateRequest) -> None:
         """Create new table
 
         Args:
-            name: Table name
-            description: Table description
+            create: Table creation data
 
         Returns:
-            Created table instance
+            None
 
         Raises:
             ValueError: Table already exists
@@ -68,55 +68,50 @@ class Namespace:
         from .table import Table
 
         # Use metadata to add table
-        self._db.metadata.add_table(self._name, name, description)
+        self._db.metadata.add_table(self._name, create.name, create.description)
 
         # Create table directory
-        table_dir = self._files.dir / name
+        table_dir = self._files.dir / create.name
 
         # Use Table class method to create table
-        return Table.initialize(self._db, table_dir)
+        Table.initialize(self._db, table_dir)
 
-    def list_tables(self) -> list[str]:
+    def list_tables(self) -> list[TableData]:
         """Get list of all tables in namespace
 
         Returns:
-            List of table names
+            List of tables
         """
-        tables = self._db.metadata.get_tables(self._name)
-        return [table.name for table in tables]
+        tables_metadata = self._db.metadata.get_tables(self._name)
+        return [TableData(name=table.name, description=table.description, namespace=self._name) for table in
+                tables_metadata]
 
-    def get_table(self, name: str):
+    def get_table(self, name: str) -> TableData | None:
         """Get single table instance
 
         Args:
             name: Table name
 
         Returns:
-            Table instance
-
-        Raises:
-            ValueError: Table not found
+            Table information or None if not found
         """
-        from .table import Table
-        tables = self._db.metadata.get_tables(self._name)
-        for table in tables:
-            if table.name == name:
-                table_dir = self._files.dir / table.path
-                return Table(self._db, dir=table_dir)
-        raise ValueError(f"Table '{name}' not found in namespace")
+        table = self._db.metadata.get_table(self._name, name)
+        if table:
+            return TableData(name=table.name, description=table.description, namespace=self._name)
+        return None
 
-    def update_table(self, name: str, description: str) -> None:
+    def update_table(self, name: str, update: TableUpdateRequest) -> None:
         """Update table information
 
         Args:
             name: Table name
-            description: New description
+            update: Table update data
 
         Raises:
             ValueError: Table not found
         """
         # Use metadata to update table
-        self._db.metadata.update_table(self._name, name, description)
+        self._db.metadata.update_table(self._name, name, update.description)
 
     def delete_table(self, name: str) -> None:
         """Delete table
@@ -134,3 +129,22 @@ class Namespace:
         table_dir = self._files.dir / name
         if table_dir.exists():
             shutil.rmtree(table_dir)
+
+    def load_table(self, table: str) -> ITable:
+        """Get record data access object for a specific table
+
+        Args:
+            table: Table name
+
+        Returns:
+            ITable implementation for the table
+
+        Raises:
+            ValueError: Table not found
+        """
+        from .table import Table
+        table_metadata = self._db.metadata.get_table(self._name, table)
+        if table_metadata:
+            table_dir = self._files.dir / table_metadata.path
+            return Table(self._db, table_dir)
+        raise ValueError(f"Table '{table}' not found in namespace '{self._name}'")

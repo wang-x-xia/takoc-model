@@ -11,15 +11,15 @@ class NamespaceBase(BaseModel):
     description: Optional[str]
 
 
-class NamespaceCreate(NamespaceBase):
+class NamespaceCreateRequest(NamespaceBase):
     ...
 
 
-class NamespaceUpdate(BaseModel):
+class NamespaceUpdateRequest(BaseModel):
     description: str = Field(..., description="Description of the namespace")
 
 
-class Namespace(NamespaceBase):
+class NamespaceData(NamespaceBase):
     ...
 
 
@@ -28,15 +28,15 @@ class TableBase(BaseModel):
     description: Optional[str]
 
 
-class TableCreate(TableBase):
+class TableCreateRequest(TableBase):
     ...
 
 
-class TableUpdate(BaseModel):
+class TableUpdateRequest(BaseModel):
     description: str = Field(..., description="Description of the table")
 
 
-class Table(TableBase):
+class TableData(TableBase):
     namespace: str = Field(..., description="Name of the parent namespace")
 
 
@@ -67,22 +67,22 @@ class INamespaces(ABC):
     """Namespace data access interface"""
 
     @abstractmethod
-    def list_namespaces(self) -> list[Namespace]:
+    def list_namespaces(self) -> list[NamespaceData]:
         """List all namespace metadata"""
         pass
 
     @abstractmethod
-    def create_namespace(self, create: NamespaceCreate) -> None:
+    def create_namespace(self, create: NamespaceCreateRequest) -> None:
         """Add namespace metadata"""
         pass
 
     @abstractmethod
-    def get_namespace(self, namespace) -> Namespace | None:
+    def get_namespace(self, namespace) -> NamespaceData | None:
         """Add namespace metadata"""
         pass
 
     @abstractmethod
-    def update_namespace(self, update: NamespaceUpdate) -> None:
+    def update_namespace(self, namespace: str, update: NamespaceUpdateRequest) -> None:
         """Update namespace metadata"""
         pass
 
@@ -97,27 +97,27 @@ class INamespace(ABC):
 
     @property
     @abstractmethod
-    def namespace(self) -> str:
+    def name(self) -> str:
         """Namespace property"""
         pass
 
     @abstractmethod
-    def list_tables(self) -> list[Table]:
+    def list_tables(self) -> list[TableData]:
         """List all table metadata in a namespace"""
         pass
 
     @abstractmethod
-    def get_table(self, name: str) -> Table | None:
+    def get_table(self, name: str) -> TableData | None:
         """Get a single table by name, return None if not found"""
         pass
 
     @abstractmethod
-    def create_table(self, create: TableCreate) -> None:
+    def create_table(self, create: TableCreateRequest) -> None:
         """Add table metadata"""
         pass
 
     @abstractmethod
-    def update_table(self, update: TableUpdate) -> None:
+    def update_table(self, name: str, update: TableUpdateRequest) -> None:
         """Update table metadata"""
         pass
 
@@ -143,7 +143,7 @@ class ITable(ABC):
 
     @property
     @abstractmethod
-    def table(self) -> str:
+    def name(self) -> str:
         """Table property"""
         pass
 

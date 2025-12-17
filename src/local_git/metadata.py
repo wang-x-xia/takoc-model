@@ -63,6 +63,22 @@ class Metadata:
             **data) if data else NamespacesMetadata()
         return namespaces_data.namespaces
 
+    def get_namespace(self, name: str) -> NamespaceMetadata | None:
+        """
+        Get metadata for a specific namespace.
+
+        Args:
+            name: Namespace name
+
+        Returns:
+            NamespaceMetadata object if found, None otherwise.
+        """
+        namespaces = self.get_namespaces()
+        for ns in namespaces:
+            if ns.name == name:
+                return ns
+        return None
+
     def add_namespace(self, name: str, description: str = "") -> None:
         """
         Add a new namespace to metadata.
@@ -158,6 +174,23 @@ class Metadata:
         data = self._files.read_file(table_file)
         tables_data = TablesMetadata(**data) if data else TablesMetadata()
         return tables_data.tables
+
+    def get_table(self, namespace: str, name: str) -> TableMetadata | None:
+        """
+        Get metadata for a specific table in a namespace.
+
+        Args:
+            namespace: Namespace name
+            name: Table name
+
+        Returns:
+            TableMetadata object if found, None otherwise.
+        """
+        tables = self.get_tables(namespace)
+        for table in tables:
+            if table.name == name:
+                return table
+        return None
 
     def add_table(self, namespace: str, name: str, description: str = "") -> None:
         """

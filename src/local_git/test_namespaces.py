@@ -2,6 +2,7 @@ import tempfile
 
 import pytest
 
+from ..api.v1 import NamespaceCreateRequest, NamespaceUpdateRequest
 from .db import TakocLocalDb
 
 
@@ -18,14 +19,15 @@ def test_create_namespace(temp_namespaces):
     namespaces, db = temp_namespaces
 
     # Create namespace
-    namespace = namespaces.create_namespace(
-        name="test_namespace",
-        description="This is a test namespace"
+    namespaces.create_namespace(
+        NamespaceCreateRequest(name="test_namespace", description="This is a test namespace")
     )
 
-    assert namespace is not None
-    assert hasattr(namespace, "_db")
-    assert hasattr(namespace, "_files")
+    # Verify namespace was created
+    created_namespace = namespaces.get_namespace("test_namespace")
+    assert created_namespace is not None
+    assert created_namespace.name == "test_namespace"
+    assert created_namespace.description == "This is a test namespace"
 
     # Verify namespace directory has been created
     namespace_dir = db.global_config.data_dir / "test_namespace"
@@ -41,8 +43,8 @@ def test_list_namespaces(temp_namespaces):
     assert len(initial_namespaces) == 0
 
     # Create two namespaces
-    namespaces.create_namespace(name="ns1", description="Namespace 1")
-    namespaces.create_namespace(name="ns2", description="Namespace 2")
+    namespaces.create_namespace(NamespaceCreateRequest(name="ns1", description="Namespace 1"))
+    namespaces.create_namespace(NamespaceCreateRequest(name="ns2", description="Namespace 2"))
 
     # Verify namespace list
     all_namespaces = namespaces.list_namespaces()
@@ -63,25 +65,23 @@ def test_get_namespace(temp_namespaces):
     namespaces, db = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(name="test_ns", description="Test namespace")
+    namespaces.create_namespace(NamespaceCreateRequest(name="test_ns", description="Test namespace"))
 
     # Get namespace
     namespace = namespaces.get_namespace("test_ns")
 
     assert namespace is not None
-    assert hasattr(namespace, "_db")
-    assert hasattr(namespace, "_files")
+    assert namespace.name == "test_ns"
+    assert namespace.description == "Test namespace"
 
 
 def test_get_nonexistent_namespace(temp_namespaces):
     """Test getting non-existent namespace"""
     namespaces, _ = temp_namespaces
 
-    # Getting non-existent namespace should raise exception
-    with pytest.raises(ValueError) as excinfo:
-        namespaces.get_namespace("nonexistent")
-
-    assert "not found" in str(excinfo.value)
+    # Getting non-existent namespace should return None
+    namespace = namespaces.get_namespace("nonexistent")
+    assert namespace is None
 
 
 def test_update_namespace(temp_namespaces):
@@ -89,10 +89,10 @@ def test_update_namespace(temp_namespaces):
     namespaces, _ = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(name="update_test", description="Original description")
+    namespaces.create_namespace(NamespaceCreateRequest(name="update_test", description="Original description"))
 
     # Update namespace
-    namespaces.update_namespace(name="update_test", description="Updated description")
+    namespaces.update_namespace("update_test", NamespaceUpdateRequest(description="Updated description"))
 
     # Verify update
     all_namespaces = namespaces.list_namespaces()
@@ -106,7 +106,7 @@ def test_update_nonexistent_namespace(temp_namespaces):
 
     # Updating non-existent namespace should raise exception
     with pytest.raises(ValueError) as excinfo:
-        namespaces.update_namespace(name="nonexistent", description="Description")
+        namespaces.update_namespace("nonexistent", NamespaceUpdateRequest(description="Description"))
 
     assert "not found" in str(excinfo.value)
 
@@ -116,7 +116,7 @@ def test_delete_namespace(temp_namespaces):
     namespaces, db = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(name="delete_test", description="To be deleted")
+    namespaces.create_namespace(NamespaceCreateRequest(name="delete_test", description="To be deleted"))
 
     # Verify namespace exists
     all_namespaces = namespaces.list_namespaces()
@@ -127,7 +127,7 @@ def test_delete_namespace(temp_namespaces):
     assert namespace_dir.exists()
 
     # Delete namespace
-    namespaces.delete_namespace(name="delete_test")
+    namespaces.delete_namespace("delete_test")
 
     # Verify namespace has been deleted
     all_namespaces = namespaces.list_namespaces()
@@ -143,7 +143,7 @@ def test_delete_nonexistent_namespace(temp_namespaces):
 
     # Deleting non-existent namespace should raise exception
     with pytest.raises(ValueError) as excinfo:
-        namespaces.delete_namespace(name="nonexistent")
+        namespaces.delete_namespace("nonexistent")
 
     assert "not found" in str(excinfo.value)
 
@@ -153,10 +153,10 @@ def test_create_duplicate_namespace(temp_namespaces):
     namespaces, _ = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(name="duplicate", description="First instance")
+    namespaces.create_namespace(NamespaceCreateRequest(name="duplicate", description="First instance"))
 
     # Creating same namespace again should raise exception
     with pytest.raises(ValueError) as excinfo:
-        namespaces.create_namespace(name="duplicate", description="Second instance")
+        namespaces.create_namespace(NamespaceCreateRequest(name="duplicate", description="Second instance"))
 
     assert "already exists" in str(excinfo.value)

@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
+from ..api.v1 import ITable
 from .db import TakocLocalDb
 from .file_io import Files, FILE_FORMAT
 
@@ -34,7 +36,7 @@ class Records(BaseModel):
     records: list[RecordPos] = []
 
 
-class Table:
+class Table(ITable):
     """Table APIs"""
 
     def __init__(self, db: TakocLocalDb, dir: Path):
@@ -54,6 +56,10 @@ class Table:
             format=self._meta.records_format if self._meta.records_format else self._db.global_config.default_format)
 
         self._schema = self._meta.json_schema
+
+        # Extract namespace and table name from path
+        self._namespace = dir.parent.name
+        self._table_name = dir.name
 
     @classmethod
     def initialize(cls, db: TakocLocalDb, dir: Path) -> 'Table':
@@ -88,6 +94,24 @@ class Table:
     def json_schema(self) -> dict | None:
         return self._schema
 
+    @property
+    def namespace(self) -> str:
+        """Get namespace name
+
+        Returns:
+            Namespace name
+        """
+        return self._namespace
+
+    @property
+    def name(self) -> str:
+        """Get table name
+
+        Returns:
+            Table name
+        """
+        return self._table_name
+
     def _get_records(self) -> Records:
         """Get all records
 
@@ -112,14 +136,14 @@ class Table:
         """
         return [record.id for record in self._get_records().records]
 
-    def get_record(self, record_id: str) -> dict:
+    def get_record(self, record_id: str) -> Any:
         """Get a specific record
 
         Args:
             record_id: Record ID
 
         Returns:
-            Record object
+            Record data
 
         Raises:
             ValueError: Record not found
@@ -129,7 +153,7 @@ class Table:
             raise ValueError(f"Record '{record_id}' not found in table")
         return record
 
-    def create_record(self, record_id: str, data: dict) -> None:
+    def create_record(self, record_id: str, data: Any) -> None:
         """Create a new record
 
         Args:
@@ -137,7 +161,7 @@ class Table:
             data: Record data
 
         Returns:
-            Created record object
+            None
         """
         records = self._get_records()
         if any(record.id == record_id for record in records.records):
@@ -148,7 +172,7 @@ class Table:
 
         self._files.write_file(record_id, data)
 
-    def update_record(self, record_id: str, data: dict) -> None:
+    def update_record(self, record_id: str, data: Any) -> None:
         """Update a record
 
         Args:
@@ -156,7 +180,7 @@ class Table:
             data: New record data
 
         Returns:
-            Updated record object
+            None
 
         Raises:
             ValueError: Record not found
@@ -172,6 +196,9 @@ class Table:
 
         Args:
             record_id: Record ID
+
+        Returns:
+            None
 
         Raises:
             ValueError: Record not found

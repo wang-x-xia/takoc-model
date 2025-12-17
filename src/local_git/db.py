@@ -1,10 +1,11 @@
 from pathlib import Path
 
+from ..api.v1 import IDatabase, INamespace
 from .file_io import Files
 from .global_config import GlobalConfig
 
 
-class TakocLocalDb:
+class TakocLocalDb(IDatabase):
     """Local Git Database"""
 
     def __init__(self, db_root: str = ".", read_only: bool = False):
@@ -44,3 +45,15 @@ class TakocLocalDb:
         """Save global configuration file"""
         global_config.save(self._files)
         return TakocLocalDb(db_root=self._files.dir, read_only=self.read_only)
+
+    def load_namespace(self, namespace: str) -> INamespace | None:
+        """Get table data access object for a specific namespace"""
+        from .namespace import Namespace
+
+        # Check if namespace exists
+        if not self._metadata.get_namespace(namespace):
+            return None
+
+        # Create and return namespace instance
+        namespace_dir = self._files.dir / namespace
+        return Namespace(db=self, name=namespace, dir=namespace_dir)
