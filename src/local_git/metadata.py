@@ -1,7 +1,11 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 from .db import TakocLocalDb
 from .file_io import Files
+from ..api.v1 import INamespace, ITable, TableData, TableCreateRequest, TableUpdateRequest, NamespaceData, \
+    NamespaceCreateRequest, NamespaceUpdateRequest
 
 
 class NamespaceMetadata(BaseModel):
@@ -276,3 +280,147 @@ class Metadata:
 
         # Save updated tables
         self._files.write_file(table_file, tables_data.model_dump())
+
+    def get_metadata_namespace(self) -> INamespace:
+        """
+        Get the special 'takoc' metadata namespace.
+
+        Returns:
+            INamespace implementation for the metadata namespace.
+        """
+        return MetadataNamespace(self)
+
+
+class NamespacesTable(ITable):
+    """ITable implementation for namespace records"""
+
+    def __init__(self, metadata: Metadata):
+        self._metadata = metadata
+
+    @property
+    def namespace(self) -> str:
+        return "takoc"
+
+    @property
+    def name(self) -> str:
+        return "namespace"
+
+    def list_records(self) -> list[str]:
+        namespaces = self._metadata.get_namespaces()
+        return [ns.name for ns in namespaces]
+
+    def get_record(self, record_id: str) -> Any:
+        namespace = self._metadata.get_namespace(record_id)
+        if namespace:
+            return NamespaceData(name=namespace.name, description=namespace.description).model_dump()
+        raise ValueError(f"Namespace '{record_id}' not found")
+
+    def create_record(self, record_id: str, data: Any) -> None:
+        create_req = NamespaceCreateRequest(**data)
+        if create_req.name != record_id:
+            raise ValueError(f"Record ID '{record_id}' must match namespace name '{create_req.name}'")
+        self._metadata.add_namespace(create_req.name, create_req.description)
+
+    def update_record(self, record_id: str, data: Any) -> None:
+        update_req = NamespaceUpdateRequest(**data)
+        self._metadata.update_namespace(record_id, update_req.description)
+
+    def delete_record(self, record_id: str) -> None:
+        self._metadata.delete_namespace_meta(record_id)
+
+
+class TablesTable(ITable):
+    """ITable implementation for table records"""
+
+    def __init__(self, metadata: Metadata):
+        self._metadata = metadata
+
+    @property
+    def namespace(self) -> str:
+        return "takoc"
+
+    @property
+    def name(self) -> str:
+        return "table"
+
+    def list_records(self) -> list[str]:
+        all_tables = []
+        namespaces = self._metadata.get_namespaces()
+        for ns in namespaces:
+            tables = self._metadata.get_tables(ns.name)
+            for table in tables:
+                all_tables.append(f"{ns.name}.{table.name}")
+        return all_tables
+
+    def get_record(self, record_id: str) -> Any:
+        if "." not in record_id:
+            raise ValueError(f"Invalid table record ID format: '{record_id}'. Use 'namespace.table' format.")
+        namespace, table_name = record_id.split(".", 1)
+        table = self._metadata.get_table(namespace, table_name)
+        if table:
+            return TableData(name=table.name, description=table.description, namespace=namespace).model_dump()
+        raise ValueError(f"Table '{record_id}' not found")
+
+    def create_record(self, record_id: str, data: Any) -> None:
+        if "." not in record_id:
+            raise ValueError(f"Invalid table record ID format: '{record_id}'. Use 'namespace.table' format.")
+        namespace, table_name = record_id.split(".", 1)
+        create_req = TableCreateRequest(**data)
+        if create_req.name != table_name:
+            raise ValueError(f"Record ID table name '{table_name}' must match table name '{create_req.name}'")
+        self._metadata.add_table(namespace, create_req.name, create_req.description)
+
+    def update_record(self, record_id: str, data: Any) -> None:
+        if "." not in record_id:
+            raise ValueError(f"Invalid table record ID format: '{record_id}'. Use 'namespace.table' format.")
+        namespace, table_name = record_id.split(".", 1)
+        update_req = TableUpdateRequest(**data)
+        self._metadata.update_table(namespace, table_name, update_req.description)
+
+    def delete_record(self, record_id: str) -> None:
+        if "." not in record_id:
+            raise ValueError(f"Invalid table record ID format: '{record_id}'. Use 'namespace.table' format.")
+        namespace, table_name = record_id.split(".", 1)
+        self._metadata.delete_table(namespace, table_name)
+
+
+class MetadataNamespace(INamespace):
+    """INamespace implementation for metadata namespace"""
+
+    def __init__(self, metadata: Metadata):
+        self._metadata = metadata
+        self._name = "takoc"
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def list_tables(self) -> list[TableData]:
+        return [
+            TableData(name="namespace", description="Stores all namespace records", namespace=self._name),
+            TableData(name="table", description="Stores all table records", namespace=self._name)
+        ]
+
+    def get_table(self, name: str) -> TableData | None:
+        if name in ["namespace", "table"]:
+            if name == "namespace":
+                return TableData(name="namespace", description="Stores all namespace records", namespace=self._name)
+            else:
+                return TableData(name="table", description="Stores all table records", namespace=self._name)
+        return None
+
+    def create_table(self, create: TableCreateRequest) -> None:
+        raise ValueError("Cannot create tables in the 'takoc' metadata namespace")
+
+    def update_table(self, name: str, update: TableUpdateRequest) -> None:
+        raise ValueError("Cannot update tables in the 'takoc' metadata namespace")
+
+    def delete_table(self, name: str) -> None:
+        raise ValueError("Cannot delete tables in the 'takoc' metadata namespace")
+
+    def load_table(self, table: str) -> ITable:
+        if table == "namespace":
+            return NamespacesTable(self._metadata)
+        elif table == "table":
+            return TablesTable(self._metadata)
+        raise ValueError(f"Table '{table}' not found in namespace '{self._name}'")

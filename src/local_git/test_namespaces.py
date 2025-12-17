@@ -2,8 +2,8 @@ import tempfile
 
 import pytest
 
-from ..api.v1 import NamespaceCreateRequest, NamespaceUpdateRequest
 from .db import TakocLocalDb
+from ..api.v1 import NamespaceCreateRequest, NamespaceUpdateRequest
 
 
 @pytest.fixture
@@ -38,26 +38,29 @@ def test_list_namespaces(temp_namespaces):
     """Test listing all namespaces"""
     namespaces, db = temp_namespaces
 
-    # Initially there should be no namespaces
+    # Initially there should be only the 'takoc' system namespace
     initial_namespaces = namespaces.list_namespaces()
-    assert len(initial_namespaces) == 0
+    assert len(initial_namespaces) == 1
+    assert initial_namespaces[0].name == "takoc"
 
     # Create two namespaces
     namespaces.create_namespace(NamespaceCreateRequest(name="ns1", description="Namespace 1"))
     namespaces.create_namespace(NamespaceCreateRequest(name="ns2", description="Namespace 2"))
 
-    # Verify namespace list
+    # Verify namespace list - should include 2 user namespaces + 1 system namespace
     all_namespaces = namespaces.list_namespaces()
-    assert len(all_namespaces) == 2
+    assert len(all_namespaces) == 3
 
     # Check namespace information
     ns_names = [ns.name for ns in all_namespaces]
     assert "ns1" in ns_names
     assert "ns2" in ns_names
+    assert "takoc" in ns_names
 
     ns_descriptions = [ns.description for ns in all_namespaces]
     assert "Namespace 1" in ns_descriptions
     assert "Namespace 2" in ns_descriptions
+    assert "System metadata namespace" in ns_descriptions
 
 
 def test_get_namespace(temp_namespaces):
@@ -118,9 +121,12 @@ def test_delete_namespace(temp_namespaces):
     # Create namespace
     namespaces.create_namespace(NamespaceCreateRequest(name="delete_test", description="To be deleted"))
 
-    # Verify namespace exists
+    # Verify namespace exists - should have 'takoc' + 'delete_test' = 2 namespaces
     all_namespaces = namespaces.list_namespaces()
-    assert len(all_namespaces) == 1
+    assert len(all_namespaces) == 2
+    namespace_names = [ns.name for ns in all_namespaces]
+    assert "takoc" in namespace_names
+    assert "delete_test" in namespace_names
 
     # Verify namespace directory exists
     namespace_dir = db.global_config.data_dir / "delete_test"
@@ -129,9 +135,10 @@ def test_delete_namespace(temp_namespaces):
     # Delete namespace
     namespaces.delete_namespace("delete_test")
 
-    # Verify namespace has been deleted
+    # Verify namespace has been deleted - should have only 'takoc' left
     all_namespaces = namespaces.list_namespaces()
-    assert len(all_namespaces) == 0
+    assert len(all_namespaces) == 1
+    assert all_namespaces[0].name == "takoc"
 
     # Verify namespace directory has been deleted
     assert not namespace_dir.exists()

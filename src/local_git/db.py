@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from ..api.v1 import IDatabase, INamespace
 from .file_io import Files
 from .global_config import GlobalConfig
+from ..api.v1 import IDatabase, INamespace
 
 
 class TakocLocalDb(IDatabase):
@@ -48,6 +48,10 @@ class TakocLocalDb(IDatabase):
 
     def load_namespace(self, namespace: str) -> INamespace | None:
         """Get table data access object for a specific namespace"""
+        # Check if this is the special 'takoc' metadata namespace
+        if namespace == "takoc":
+            return self._metadata.get_metadata_namespace()
+
         from .namespace import Namespace
 
         # Check if namespace exists

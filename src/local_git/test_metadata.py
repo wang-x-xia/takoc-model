@@ -245,3 +245,242 @@ def test_delete_namespace_meta_clears_tables(temp_metadata_with_table):
     # Verify tables file is also deleted by trying to get tables (should return empty list)
     tables_after = metadata.get_tables(namespace="test_ns")
     assert len(tables_after) == 0
+
+
+def test_get_metadata_namespace(temp_metadata):
+    """Test that get_metadata_namespace returns a MetadataNamespace instance"""
+    metadata, db = temp_metadata
+    metadata_namespace = metadata.get_metadata_namespace()
+
+    from .metadata import MetadataNamespace
+    assert isinstance(metadata_namespace, MetadataNamespace)
+    assert metadata_namespace.name == "takoc"
+
+
+def test_metadata_namespace_list_tables(temp_metadata):
+    """Test that MetadataNamespace lists the correct tables"""
+    metadata, db = temp_metadata
+    metadata_namespace = metadata.get_metadata_namespace()
+
+    tables = metadata_namespace.list_tables()
+    assert len(tables) == 2
+    table_names = [table.name for table in tables]
+    assert "namespace" in table_names
+    assert "table" in table_names
+
+
+def test_metadata_namespace_get_table(temp_metadata):
+    """Test that MetadataNamespace can get individual tables"""
+    metadata, db = temp_metadata
+    metadata_namespace = metadata.get_metadata_namespace()
+
+    namespace_table = metadata_namespace.get_table("namespace")
+    assert namespace_table is not None
+    assert namespace_table.name == "namespace"
+    assert namespace_table.description == "Stores all namespace records"
+
+    table_table = metadata_namespace.get_table("table")
+    assert table_table is not None
+    assert table_table.name == "table"
+    assert table_table.description == "Stores all table records"
+
+    nonexistent_table = metadata_namespace.get_table("nonexistent")
+    assert nonexistent_table is None
+
+
+def test_metadata_namespace_load_table(temp_metadata):
+    """Test that MetadataNamespace can load table implementations"""
+    metadata, db = temp_metadata
+    metadata_namespace = metadata.get_metadata_namespace()
+
+    from .metadata import NamespacesTable, TablesTable
+
+    namespace_table = metadata_namespace.load_table("namespace")
+    assert isinstance(namespace_table, NamespacesTable)
+
+    table_table = metadata_namespace.load_table("table")
+    assert isinstance(table_table, TablesTable)
+
+    with pytest.raises(ValueError):
+        metadata_namespace.load_table("nonexistent")
+
+
+def test_metadata_namespace_cannot_modify_tables(temp_metadata):
+    """Test that MetadataNamespace tables cannot be modified"""
+    metadata, db = temp_metadata
+    metadata_namespace = metadata.get_metadata_namespace()
+
+    from ..api.v1 import TableCreateRequest, TableUpdateRequest
+
+    with pytest.raises(ValueError):
+        metadata_namespace.create_table(TableCreateRequest(name="new_table", description="New table"))
+
+    with pytest.raises(ValueError):
+        metadata_namespace.update_table("namespace", TableUpdateRequest(description="Updated description"))
+
+    with pytest.raises(ValueError):
+        metadata_namespace.delete_table("namespace")
+
+
+def test_namespaces_table_list_records(temp_metadata_with_namespace):
+    """Test that NamespacesTable can list namespace records"""
+    metadata, db = temp_metadata_with_namespace
+    namespaces_table = metadata.get_metadata_namespace().load_table("namespace")
+
+    records = namespaces_table.list_records()
+    assert len(records) == 1
+    assert "test_ns" in records
+
+
+def test_namespaces_table_get_record(temp_metadata_with_namespace):
+    """Test that NamespacesTable can get individual namespace records"""
+    metadata, db = temp_metadata_with_namespace
+    namespaces_table = metadata.get_metadata_namespace().load_table("namespace")
+
+    record = namespaces_table.get_record("test_ns")
+    assert record["name"] == "test_ns"
+    assert record["description"] == "Test namespace"
+
+    with pytest.raises(ValueError):
+        namespaces_table.get_record("nonexistent")
+
+
+def test_namespaces_table_create_record(temp_metadata):
+    """Test that NamespacesTable can create namespace records"""
+    metadata, db = temp_metadata
+    namespaces_table = metadata.get_metadata_namespace().load_table("namespace")
+
+    data = {"name": "new_ns", "description": "New namespace"}
+    namespaces_table.create_record("new_ns", data)
+
+    # Verify namespace was created
+    namespaces = metadata.get_namespaces()
+    assert len(namespaces) == 1
+    assert namespaces[0].name == "new_ns"
+    assert namespaces[0].description == "New namespace"
+
+    # Verify record exists
+    record = namespaces_table.get_record("new_ns")
+    assert record["name"] == "new_ns"
+
+
+def test_namespaces_table_update_record(temp_metadata_with_namespace):
+    """Test that NamespacesTable can update namespace records"""
+    metadata, db = temp_metadata_with_namespace
+    namespaces_table = metadata.get_metadata_namespace().load_table("namespace")
+
+    data = {"description": "Updated namespace"}
+    namespaces_table.update_record("test_ns", data)
+
+    # Verify namespace was updated
+    namespace = metadata.get_namespace("test_ns")
+    assert namespace.description == "Updated namespace"
+
+    # Verify record was updated
+    record = namespaces_table.get_record("test_ns")
+    assert record["description"] == "Updated namespace"
+
+
+def test_namespaces_table_delete_record(temp_metadata_with_namespace):
+    """Test that NamespacesTable can delete namespace records"""
+    metadata, db = temp_metadata_with_namespace
+    namespaces_table = metadata.get_metadata_namespace().load_table("namespace")
+
+    namespaces_table.delete_record("test_ns")
+
+    # Verify namespace was deleted
+    namespaces = metadata.get_namespaces()
+    assert len(namespaces) == 0
+
+
+def test_tables_table_list_records(temp_metadata_with_table):
+    """Test that TablesTable can list table records with namespace.table format"""
+    metadata, db = temp_metadata_with_table
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    records = tables_table.list_records()
+    assert len(records) == 1
+    assert "test_ns.test_table" in records
+
+
+def test_tables_table_get_record(temp_metadata_with_table):
+    """Test that TablesTable can get individual table records"""
+    metadata, db = temp_metadata_with_table
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    record = tables_table.get_record("test_ns.test_table")
+    assert record["name"] == "test_table"
+    assert record["description"] == "Test table"
+    assert record["namespace"] == "test_ns"
+
+    with pytest.raises(ValueError):
+        tables_table.get_record("nonexistent_table")
+
+    with pytest.raises(ValueError):
+        tables_table.get_record("nonexistent.namespace")
+
+
+def test_tables_table_create_record(temp_metadata_with_namespace):
+    """Test that TablesTable can create table records"""
+    metadata, db = temp_metadata_with_namespace
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    data = {"name": "new_table", "description": "New table"}
+    tables_table.create_record("test_ns.new_table", data)
+
+    # Verify table was created
+    tables = metadata.get_tables("test_ns")
+    assert len(tables) == 1
+    assert tables[0].name == "new_table"
+    assert tables[0].description == "New table"
+
+    # Verify record exists
+    record = tables_table.get_record("test_ns.new_table")
+    assert record["name"] == "new_table"
+
+
+def test_tables_table_update_record(temp_metadata_with_table):
+    """Test that TablesTable can update table records"""
+    metadata, db = temp_metadata_with_table
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    data = {"description": "Updated table"}
+    tables_table.update_record("test_ns.test_table", data)
+
+    # Verify table was updated
+    table = metadata.get_table("test_ns", "test_table")
+    assert table.description == "Updated table"
+
+    # Verify record was updated
+    record = tables_table.get_record("test_ns.test_table")
+    assert record["description"] == "Updated table"
+
+
+def test_tables_table_delete_record(temp_metadata_with_table):
+    """Test that TablesTable can delete table records"""
+    metadata, db = temp_metadata_with_table
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    tables_table.delete_record("test_ns.test_table")
+
+    # Verify table was deleted
+    tables = metadata.get_tables("test_ns")
+    assert len(tables) == 0
+
+
+def test_tables_table_record_id_format(temp_metadata):
+    """Test that TablesTable enforces namespace.table record ID format"""
+    metadata, db = temp_metadata
+    tables_table = metadata.get_metadata_namespace().load_table("table")
+
+    with pytest.raises(ValueError):
+        tables_table.get_record("invalid_id")
+
+    with pytest.raises(ValueError):
+        tables_table.create_record("invalid_id", {"name": "table", "description": "Table"})
+
+    with pytest.raises(ValueError):
+        tables_table.update_record("invalid_id", {"description": "Updated"})
+
+    with pytest.raises(ValueError):
+        tables_table.delete_record("invalid_id")
