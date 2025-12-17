@@ -4,6 +4,7 @@ from pathlib import Path
 from .db import TakocLocalDb
 from .file_io import Files
 from .namespace import Namespace
+from ..api.error import ReadOnlyError
 from ..api.v1 import INamespaces, NamespaceData, NamespaceCreateRequest, NamespaceUpdateRequest
 
 
@@ -30,7 +31,7 @@ class Namespaces(INamespaces):
             None
         """
         if create.name == "takoc":
-            raise ValueError(
+            raise ReadOnlyError(
                 "Cannot create namespace with name 'takoc' - it's a reserved system namespace")
 
         # Use metadata to add namespace
@@ -82,7 +83,7 @@ class Namespaces(INamespaces):
             ValueError: Namespace not found or cannot modify 'takoc' namespace
         """
         if namespace == "takoc":
-            raise ValueError(
+            raise ReadOnlyError(
                 "Cannot update the 'takoc' system metadata namespace")
 
         # Use metadata to update namespace
@@ -98,7 +99,7 @@ class Namespaces(INamespaces):
             ValueError: Namespace not found or cannot delete 'takoc' namespace
         """
         if name == "takoc":
-            raise ValueError(
+            raise ReadOnlyError(
                 "Cannot delete the 'takoc' system metadata namespace")
 
         # Use metadata to delete namespace metadata

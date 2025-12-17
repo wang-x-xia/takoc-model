@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 import yaml
 
+from ..api.error import ReadOnlyError
+
 FILE_FORMAT = Literal["yaml", "json"]
 
 
@@ -116,7 +118,7 @@ class Files:
             data: file content
         """
         if self.read_only:
-            raise PermissionError("Read-only mode, cannot write files")
+            raise ReadOnlyError("Read-only mode, cannot write files")
 
         file = self.dir / (file_name + self.default_ext)
         os.makedirs(file.parent, exist_ok=True)
@@ -135,9 +137,14 @@ class Files:
         Args:
             file_name: file name without extension
         """
-        file, _ = self.file_info(file_name)
-        if os.path.exists(file):
-            os.remove(file)
+        if self.read_only:
+            raise ReadOnlyError("Read-only mode, cannot delete files")
+
+        file_info = self.file_info(file_name)
+        if file_info:
+            file, _ = file_info
+            if os.path.exists(file):
+                os.remove(file)
 
     @property
     def default_ext(self) -> str:

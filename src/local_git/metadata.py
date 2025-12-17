@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from .db import TakocLocalDb
 from .file_io import Files
+from ..api.error import ReadOnlyError
 from ..api.v1 import INamespace, ITable, TableData, TableCreateRequest, TableUpdateRequest, NamespaceData, \
     NamespaceCreateRequest, NamespaceUpdateRequest
 
@@ -410,13 +411,13 @@ class MetadataNamespace(INamespace):
         return None
 
     def create_table(self, create: TableCreateRequest) -> None:
-        raise ValueError("Cannot create tables in the 'takoc' metadata namespace")
+        raise ReadOnlyError("Cannot create tables in the 'takoc' metadata namespace")
 
     def update_table(self, name: str, update: TableUpdateRequest) -> None:
-        raise ValueError("Cannot update tables in the 'takoc' metadata namespace")
+        raise ReadOnlyError("Cannot update tables in the 'takoc' metadata namespace")
 
     def delete_table(self, name: str) -> None:
-        raise ValueError("Cannot delete tables in the 'takoc' metadata namespace")
+        raise ReadOnlyError("Cannot delete tables in the 'takoc' metadata namespace")
 
     def load_table(self, table: str) -> ITable:
         if table == "namespace":

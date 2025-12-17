@@ -126,7 +126,8 @@ def test_write_read_only(temp_dir, test_data):
     """Test writing file in read-only mode"""
     files = Files(dir=temp_dir, read_only=True, format="yaml")
 
-    with pytest.raises(PermissionError):
+    from ..api.error import ReadOnlyError
+    with pytest.raises(ReadOnlyError):
         files.write_file("test", test_data)
 
 

@@ -66,7 +66,8 @@ def test_read_only_mode():
 
         # Attempting to save configuration should fail
         new_config = GlobalConfig(version="2.0")
-        with pytest.raises(PermissionError):
+        from ..api.error import ReadOnlyError
+        with pytest.raises(ReadOnlyError):
             db.save_global_config(new_config)
 
 
