@@ -3,9 +3,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ..api.v1 import ITable
 from .db import TakocLocalDb
 from .file_io import Files, FILE_FORMAT
+from ..api.v1 import ITable
 
 
 class TableMeta(BaseModel):
@@ -120,6 +120,22 @@ class Table(ITable):
         """
         return Records(**self._files.read_file("records"))
 
+    def _get_record(self, record_id: str, records: Records = None) -> RecordPos | None:
+        """Get record position
+
+        Args:
+            record_id: Record ID
+
+        Returns:
+            Record position object
+        """
+        if records is None:
+            records = self._get_records()
+        for record in records.records:
+            if record.id == record_id:
+                return record
+        return None
+
     def _update_records(self, records: Records) -> None:
         """Update record list
 
@@ -164,13 +180,15 @@ class Table(ITable):
             None
         """
         records = self._get_records()
-        if any(record.id == record_id for record in records.records):
+        record = self._get_record(record_id, records=records)
+        if record is not None:
             raise ValueError(f"Record '{record_id}' already exists")
 
-        records.records.append(RecordPos(id=record_id, file=record_id))
+        file_name = self._files.generate_file_name(record_id)
+        records.records.append(RecordPos(id=record_id, file=file_name))
         self._update_records(records)
 
-        self._files.write_file(record_id, data)
+        self._files.write_file(file_name, data)
 
     def update_record(self, record_id: str, data: Any) -> None:
         """Update a record
@@ -185,11 +203,11 @@ class Table(ITable):
         Raises:
             ValueError: Record not found
         """
-        records = self._get_records()
-        if not any(record.id == record_id for record in records.records):
+        record = self._get_record(record_id)
+        if record is None:
             raise ValueError(f"Record '{record_id}' not found in table")
 
-        self._files.write_file(record_id, data)
+        self._files.write_file(record.file, data)
 
     def delete_record(self, record_id: str) -> None:
         """Delete a record
@@ -204,11 +222,12 @@ class Table(ITable):
             ValueError: Record not found
         """
         records = self._get_records()
-        if not any(record.id == record_id for record in records.records):
+        record = self._get_record(record_id, records=records)
+        if record is None:
             raise ValueError(f"Record '{record_id}' not found in table")
 
         records.records = [
             record for record in records.records if record.id != record_id]
         self._update_records(records)
 
-        self._files.delete_file(record_id)
+        self._files.delete_file(record.file)

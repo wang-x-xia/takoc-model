@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any, Literal
 
@@ -111,7 +112,8 @@ class Files:
         raise ValueError(f"Unsupported file format for {file_name}")
 
     def write_file(self, file_name: str, data: Any) -> None:
-        """write the file content.
+        """
+        write the file content.
 
         Args:
             file_name: file name without extension
@@ -159,3 +161,40 @@ class Files:
         elif self.format.lower() == "json":
             return ".json"
         raise ValueError(f"Unsupported file format: {self.format}")
+
+    def generate_file_name(self, base_name: str) -> str:
+        """
+        Generate a unique file name by adding timestamp suffix if the file already exists.
+        Also escapes invalid characters in file names and truncates long names.
+
+        Args:
+            base_name: Base file name without extension
+
+        Returns:
+            Unique file name without extension in the format {name}_{timestamp} if duplicated
+        """
+        # Invalid characters for file names (Windows and Unix compatible)
+        invalid_chars = '<>:/\\|?*"\x00'
+
+        # Replace invalid characters with underscore
+        safe_name = ''.join(['_' if c in invalid_chars else c for c in base_name])
+
+        # Trim spaces from beginning and end
+        safe_name = safe_name.strip()
+
+        # Ensure file name is not empty after sanitization
+        if not safe_name:
+            safe_name = "untitled"
+
+        # Truncate if too long (255 chars is typical Unix limit, leaving room for timestamp)
+        MAX_NAME_LENGTH = 60  # Use shorter limit for better readability
+        if len(safe_name) > MAX_NAME_LENGTH:
+            safe_name = safe_name[:MAX_NAME_LENGTH]
+
+        # Check if the file already exists with the safe name
+        if self.file_info(safe_name) is None:
+            return safe_name
+
+        # Generate timestamp
+        timestamp = int(time.time())
+        return f"{safe_name}_{timestamp}"
