@@ -5,7 +5,9 @@ from pydantic import BaseModel
 
 from .db import TakocLocalDb
 from .file_io import Files, FILE_FORMAT
+from ..api.error import ValidationError
 from ..api.v1 import ITable
+from ..json_schema import validate_json_schema
 
 
 class TableMeta(BaseModel):
@@ -184,6 +186,12 @@ class Table(ITable):
         if record is not None:
             raise ValueError(f"Record '{record_id}' already exists")
 
+        # Validate data against JSON schema if defined
+        if self._schema:
+            valid, error_msg = validate_json_schema(data, self._schema)
+            if not valid:
+                raise ValidationError(error_msg)
+
         file_name = self._files.generate_file_name(record_id)
         records.records.append(RecordPos(id=record_id, file=file_name))
         self._update_records(records)
@@ -206,6 +214,12 @@ class Table(ITable):
         record = self._get_record(record_id)
         if record is None:
             raise ValueError(f"Record '{record_id}' not found in table")
+
+        # Validate data against JSON schema if defined
+        if self._schema:
+            valid, error_msg = validate_json_schema(data, self._schema)
+            if not valid:
+                raise ValidationError(error_msg)
 
         self._files.write_file(record.file, data)
 
