@@ -20,7 +20,7 @@ def test_create_namespace(temp_namespaces):
 
     # Create namespace
     namespaces.create_namespace(
-        NamespaceCreateRequest(name="test_namespace", description="This is a test namespace")
+        "test_namespace", NamespaceUpdateRequest(description="This is a test namespace")
     )
 
     # Verify namespace was created
@@ -44,8 +44,8 @@ def test_list_namespaces(temp_namespaces):
     assert initial_namespaces[0].name == "takoc"
 
     # Create two namespaces
-    namespaces.create_namespace(NamespaceCreateRequest(name="ns1", description="Namespace 1"))
-    namespaces.create_namespace(NamespaceCreateRequest(name="ns2", description="Namespace 2"))
+    namespaces.create_namespace("ns1", NamespaceUpdateRequest(description="Namespace 1"))
+    namespaces.create_namespace("ns2", NamespaceUpdateRequest(description="Namespace 2"))
 
     # Verify namespace list - should include 2 user namespaces + 1 system namespace
     all_namespaces = namespaces.list_namespaces()
@@ -68,7 +68,7 @@ def test_get_namespace(temp_namespaces):
     namespaces, db = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(NamespaceCreateRequest(name="test_ns", description="Test namespace"))
+    namespaces.create_namespace("test_ns", NamespaceUpdateRequest(description="Test namespace"))
 
     # Get namespace
     namespace = namespaces.get_namespace("test_ns")
@@ -92,7 +92,7 @@ def test_update_namespace(temp_namespaces):
     namespaces, _ = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(NamespaceCreateRequest(name="update_test", description="Original description"))
+    namespaces.create_namespace("update_test", NamespaceUpdateRequest(description="Original description"))
 
     # Update namespace
     namespaces.update_namespace("update_test", NamespaceUpdateRequest(description="Updated description"))
@@ -119,7 +119,7 @@ def test_delete_namespace(temp_namespaces):
     namespaces, db = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(NamespaceCreateRequest(name="delete_test", description="To be deleted"))
+    namespaces.create_namespace("delete_test", NamespaceUpdateRequest(description="To be deleted"))
 
     # Verify namespace exists - should have 'takoc' + 'delete_test' = 2 namespaces
     all_namespaces = namespaces.list_namespaces()
@@ -160,10 +160,10 @@ def test_create_duplicate_namespace(temp_namespaces):
     namespaces, _ = temp_namespaces
 
     # Create namespace
-    namespaces.create_namespace(NamespaceCreateRequest(name="duplicate", description="First instance"))
+    namespaces.create_namespace("duplicate", NamespaceUpdateRequest(description="First instance"))
 
     # Creating same namespace again should raise exception
     with pytest.raises(ValueError) as excinfo:
-        namespaces.create_namespace(NamespaceCreateRequest(name="duplicate", description="Second instance"))
+        namespaces.create_namespace("duplicate", NamespaceUpdateRequest(description="Second instance"))
 
     assert "already exists" in str(excinfo.value)

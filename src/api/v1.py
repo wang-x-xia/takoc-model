@@ -72,13 +72,13 @@ class INamespaces(ABC):
         pass
 
     @abstractmethod
-    def create_namespace(self, create: NamespaceCreateRequest) -> None:
+    def create_namespace(self, namespace: str, update: NamespaceUpdateRequest) -> None:
         """Add namespace metadata"""
         pass
 
     @abstractmethod
-    def get_namespace(self, namespace) -> NamespaceData | None:
-        """Add namespace metadata"""
+    def get_namespace(self, namespace: str) -> NamespaceData | None:
+        """Get namespace metadata"""
         pass
 
     @abstractmethod
@@ -87,7 +87,7 @@ class INamespaces(ABC):
         pass
 
     @abstractmethod
-    def delete_namespace(self, name: str) -> None:
+    def delete_namespace(self, namespace: str) -> None:
         """Delete namespace metadata"""
         pass
 
@@ -107,22 +107,22 @@ class INamespace(ABC):
         pass
 
     @abstractmethod
-    def get_table(self, name: str) -> TableData | None:
+    def get_table(self, table: str) -> TableData | None:
         """Get a single table by name, return None if not found"""
         pass
 
     @abstractmethod
-    def create_table(self, create: TableCreateRequest) -> None:
+    def create_table(self, table: str, update: TableUpdateRequest) -> None:
         """Add table metadata"""
         pass
 
     @abstractmethod
-    def update_table(self, name: str, update: TableUpdateRequest) -> None:
+    def update_table(self, table: str, update: TableUpdateRequest) -> None:
         """Update table metadata"""
         pass
 
     @abstractmethod
-    def delete_table(self, name: str) -> None:
+    def delete_table(self, table: str) -> None:
         """Delete table metadata"""
         pass
 

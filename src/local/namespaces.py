@@ -21,25 +21,26 @@ class Namespaces(INamespaces):
         self._files = Files(
             dir=Path(db.global_config.data_dir), read_only=db.read_only, format=db.global_config.default_format)
 
-    def create_namespace(self, create: NamespaceCreateRequest) -> None:
-        """Create new namespace
+    def create_namespace(self, namespace: str, update: NamespaceUpdateRequest) -> None:
+        """Add namespace metadata
 
         Args:
-            create: Namespace creation data
+            namespace: Namespace name
+            update: Namespace update data
 
         Returns:
             None
         """
-        if create.name == "takoc":
+        if namespace == "takoc":
             raise ReadOnlyError(
                 "Cannot create namespace with name 'takoc' - it's a reserved system namespace")
 
         # Use metadata to add namespace
-        self._db.metadata.add_namespace(create.name, create.description)
+        self._db.metadata.add_namespace(namespace, update.description)
 
         # Use Namespace class method to create namespace
-        Namespace.initialize(db=self._db, name=create.name,
-                             dir=self._files.dir / create.name)
+        Namespace.initialize(db=self._db, name=namespace,
+                             dir=self._files.dir / namespace)
 
     def list_namespaces(self) -> list[NamespaceData]:
         """Get list of all namespaces

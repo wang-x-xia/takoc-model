@@ -4,8 +4,8 @@ from fastapi import HTTPException, Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .v1 import (
-    IDatabase, ITable, NamespaceCreateRequest, NamespaceUpdateRequest, NamespaceData,
-    TableCreateRequest, TableUpdateRequest, TableData, ErrorResponse, INamespace,
+    IDatabase, ITable, NamespaceUpdateRequest, NamespaceData,
+    TableUpdateRequest, TableData, ErrorResponse, INamespace,
 )
 
 app = FastAPI(
@@ -38,26 +38,27 @@ def get_database() -> IDatabase:
 # Namespace endpoints
 
 
-@app.post("/namespace", response_model=NamespaceData, status_code=201, tags=["Namespace"])
-def create_namespace(
-        namespace_data: NamespaceCreateRequest,
-        db: IDatabase = Depends(get_database)
-):
-    namespaces = db.namespaces
-    namespaces.create_namespace(namespace_data)
-
-    return NamespaceData(
-        name=namespace_data.name,
-        description=namespace_data.description
-    )
-
-
 @app.get("/namespace", response_model=list[NamespaceData], tags=["Namespace"])
 def list_namespaces(
         db: IDatabase = Depends(get_database)
 ):
     namespaces = db.namespaces
     return namespaces.list_namespaces()
+
+
+@app.post("/namespace/{namespace}", response_model=NamespaceData, status_code=201, tags=["Namespace"])
+def create_namespace(
+        namespace: str,
+        update_data: NamespaceUpdateRequest,
+        db: IDatabase = Depends(get_database)
+):
+    namespaces = db.namespaces
+    namespaces.create_namespace(namespace, update_data)
+
+    return NamespaceData(
+        name=namespace,
+        description=update_data.description
+    )
 
 
 @app.get("/namespace/{namespace}", response_model=NamespaceData, tags=["Namespace"])
@@ -112,21 +113,6 @@ def load_namespace(db: IDatabase, namespace: str):
     return namespace_obj
 
 
-@app.post("/table/{namespace}", response_model=TableData, status_code=201, tags=["Table"])
-def create_table(
-        namespace: str,
-        table_data: TableCreateRequest,
-        db: IDatabase = Depends(get_database)
-):
-    load_namespace(db, namespace).create_table(table_data)
-
-    return TableData(
-        name=table_data.name,
-        description=table_data.description,
-        namespace=namespace
-    )
-
-
 @app.get("/table/{namespace}", response_model=list[TableData], tags=["Table"])
 def list_tables(
         namespace: str,
@@ -134,6 +120,22 @@ def list_tables(
 ):
     namespace_obj = load_namespace(db, namespace)
     return namespace_obj.list_tables()
+
+
+@app.post("/table/{namespace}/{table}", response_model=TableData, status_code=201, tags=["Table"])
+def create_table(
+        namespace: str,
+        table: str,
+        update_data: TableUpdateRequest,
+        db: IDatabase = Depends(get_database)
+):
+    load_namespace(db, namespace).create_table(table, update_data)
+
+    return TableData(
+        name=table,
+        description=update_data.description,
+        namespace=namespace
+    )
 
 
 def get_table_meta(db: IDatabase, namespace: str, table: str) -> tuple[INamespace, TableData]:
@@ -209,7 +211,7 @@ def load_table(db: IDatabase, namespace: str, table: str) -> ITable:
     return table_obj
 
 
-@app.post("/data/{namespace}/{table}/{record_id}", status_code=201, tags=["Record"])
+@app.post("/record/{namespace}/{table}/{record_id}", status_code=201, tags=["Record"])
 def create_record(
         namespace: str,
         table: str,
@@ -222,7 +224,7 @@ def create_record(
     return None
 
 
-@app.get("/data/{namespace}/{table}", response_model=list[str], tags=["Record"])
+@app.get("/record/{namespace}/{table}", response_model=list[str], tags=["Record"])
 def list_records(
         namespace: str,
         table: str,
@@ -246,7 +248,7 @@ def load_table_get_record(db: IDatabase, namespace: str,
     return table_obj, record_data
 
 
-@app.get("/data/{namespace}/{table}/{record_id}", response_model=dict, tags=["Record"])
+@app.get("/record/{namespace}/{table}/{record_id}", response_model=dict, tags=["Record"])
 def get_record(
         namespace: str,
         table: str,
@@ -257,7 +259,7 @@ def get_record(
     return record_data
 
 
-@app.put("/data/{namespace}/{table}/{record_id}", tags=["Record"])
+@app.put("/record/{namespace}/{table}/{record_id}", tags=["Record"])
 def update_record(
         namespace: str,
         table: str,
@@ -274,7 +276,7 @@ def update_record(
     return None
 
 
-@app.delete("/data/{namespace}/{table}/{record_id}", status_code=204, tags=["Record"])
+@app.delete("/record/{namespace}/{table}/{record_id}", status_code=204, tags=["Record"])
 def delete_record(
         namespace: str,
         table: str,

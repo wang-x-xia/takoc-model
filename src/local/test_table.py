@@ -13,7 +13,8 @@ def temp_namespace():
         db = TakocLocalDb(db_root=tmp_dir, read_only=False)
         # Create a namespace
         namespaces = db.namespaces
-        namespaces.create_namespace(NamespaceCreateRequest(name="test_ns", description="Test namespace"))
+        from ..api.v1 import NamespaceUpdateRequest
+        namespaces.create_namespace("test_ns", NamespaceUpdateRequest(description="Test namespace"))
         namespace = db.load_namespace("test_ns")
         yield namespace, db
 
@@ -24,8 +25,9 @@ def test_create_table(temp_namespace):
     namespace, db = temp_namespace
 
     # Create table
+    from ..api.v1 import TableUpdateRequest
     namespace.create_table(
-        TableCreateRequest(name="test_table", description="This is a test table")
+        "test_table", TableUpdateRequest(description="This is a test table")
     )
 
     # Verify table exists
@@ -46,8 +48,9 @@ def test_list_tables(temp_namespace):
     assert len(initial_tables) == 0
 
     # Create two tables
-    namespace.create_table(TableCreateRequest(name="table1", description="Table 1"))
-    namespace.create_table(TableCreateRequest(name="table2", description="Table 2"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("table1", TableUpdateRequest(description="Table 1"))
+    namespace.create_table("table2", TableUpdateRequest(description="Table 2"))
 
     # Verify table list
     all_tables = namespace.list_tables()
@@ -65,7 +68,8 @@ def test_get_table(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="test_table", description="Test table"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("test_table", TableUpdateRequest(description="Test table"))
 
     # Get table
     table = namespace.get_table("test_table")
@@ -90,7 +94,8 @@ def test_update_table(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="update_test", description="Original description"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("update_test", TableUpdateRequest(description="Original description"))
 
     # Update table - verify no exception is thrown
     namespace.update_table(name="update_test", update=TableUpdateRequest(description="Updated description"))
@@ -120,7 +125,8 @@ def test_delete_table(temp_namespace):
     namespace, db = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="delete_test", description="To be deleted"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("delete_test", TableUpdateRequest(description="To be deleted"))
 
     # Verify table exists
     all_tables = namespace.list_tables()
@@ -158,11 +164,12 @@ def test_create_duplicate_table(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="duplicate_table", description="First instance"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("duplicate_table", TableUpdateRequest(description="First instance"))
 
     # Creating same table again should raise exception
     with pytest.raises(ValueError) as excinfo:
-        namespace.create_table(TableCreateRequest(name="duplicate_table", description="Second instance"))
+        namespace.create_table("duplicate_table", TableUpdateRequest(description="Second instance"))
 
     assert "already exists" in str(excinfo.value)
 
@@ -173,7 +180,8 @@ def test_table_records(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="record_test", description="Record test table"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("record_test", TableUpdateRequest(description="Record test table"))
     table = namespace.load_table("record_test")
 
     # Create records
@@ -212,7 +220,8 @@ def test_get_nonexistent_record(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="record_test", description="Record test table"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("record_test", TableUpdateRequest(description="Record test table"))
     table = namespace.load_table("record_test")
 
     # Getting non-existent record should raise exception
@@ -228,7 +237,8 @@ def test_update_nonexistent_record(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="record_test", description="Record test table"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("record_test", TableUpdateRequest(description="Record test table"))
     table = namespace.load_table("record_test")
 
     # Updating non-existent record should raise exception
@@ -244,7 +254,8 @@ def test_delete_nonexistent_record(temp_namespace):
     namespace, _ = temp_namespace
 
     # Create table
-    namespace.create_table(TableCreateRequest(name="record_test", description="Record test table"))
+    from ..api.v1 import TableUpdateRequest
+    namespace.create_table("record_test", TableUpdateRequest(description="Record test table"))
     table = namespace.load_table("record_test")
 
     # Deleting non-existent record should raise exception

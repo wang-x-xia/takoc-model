@@ -100,16 +100,44 @@ components:
 
 paths:
   /namespace:
+    get:
+      tags: [ "Namespace" ]
+      summary: List all namespaces
+      description: Get a list of all namespaces
+      responses:
+        "200":
+          description: List of namespaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NamespaceData"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /namespace/{namespace}:
     post:
       tags: [ "Namespace" ]
       summary: Create a new namespace
       description: "Create a new namespace for organizing tables. Note: The system already provides a default 'takoc' namespace for system metadata management."
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NamespaceCreateRequest"
+              $ref: "#/components/schemas/NamespaceUpdateRequest"
       responses:
         "201":
           description: Namespace created successfully
@@ -135,27 +163,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    get:
-      tags: [ "Namespace" ]
-      summary: List all namespaces
-      description: Get a list of all namespaces
-      responses:
-        "200":
-          description: List of namespaces
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/NamespaceData"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /namespace/{namespace}:
     get:
       tags: [ "Namespace" ]
       summary: Get a namespace by name
@@ -255,6 +262,40 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /table/{namespace}:
+    get:
+      tags: [ "Table" ]
+      summary: List tables in a namespace
+      description: Get a list of all tables within a namespace
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Name of the namespace
+      responses:
+        "200":
+          description: List of tables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TableData"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /table/{namespace}/{table}:
     post:
       tags: [ "Table" ]
       summary: Create a new table
@@ -266,12 +307,18 @@ paths:
           schema:
             type: string
           description: Name of the namespace
+        - in: path
+          name: table
+          required: true
+          schema:
+            type: string
+          description: Name of the table
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TableCreateRequest"
+              $ref: "#/components/schemas/TableUpdateRequest"
       responses:
         "201":
           description: Table created successfully
@@ -309,40 +356,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    get:
-      tags: [ "Table" ]
-      summary: List tables in a namespace
-      description: Get a list of all tables within a namespace
-      parameters:
-        - in: path
-          name: namespace
-          required: true
-          schema:
-            type: string
-          description: Name of the namespace
-      responses:
-        "200":
-          description: List of tables
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TableData"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Namespace not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /table/{namespace}/{table}:
     get:
       tags: [ "Table" ]
       summary: Get a table by name
@@ -465,7 +478,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /data/{namespace}/{table}:
+  /record/{namespace}/{table}:
     get:
       tags: [ "Record" ]
       summary: List records in a table
@@ -505,7 +518,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /data/{namespace}/{table}/{record_id}:
+  /record/{namespace}/{table}/{record_id}:
     post:
       tags: [ "Record" ]
       summary: Create a record

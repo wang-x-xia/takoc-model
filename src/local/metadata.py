@@ -410,7 +410,7 @@ class MetadataNamespace(INamespace):
                 return TableData(name="table", description="Stores all table records", namespace=self._name)
         return None
 
-    def create_table(self, create: TableCreateRequest) -> None:
+    def create_table(self, table: str, update: TableUpdateRequest) -> None:
         raise ReadOnlyError("Cannot create tables in the 'takoc' metadata namespace")
 
     def update_table(self, name: str, update: TableUpdateRequest) -> None:

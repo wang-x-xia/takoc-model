@@ -53,11 +53,12 @@ class Namespace(INamespace):
         """
         return self._name
 
-    def create_table(self, create: TableCreateRequest) -> None:
-        """Create new table
+    def create_table(self, table: str, update: TableUpdateRequest) -> None:
+        """Add table metadata
 
         Args:
-            create: Table creation data
+            table: Table name
+            update: Table update data
 
         Returns:
             None
@@ -68,10 +69,10 @@ class Namespace(INamespace):
         from .table import Table
 
         # Use metadata to add table
-        self._db.metadata.add_table(self._name, create.name, create.description)
+        self._db.metadata.add_table(self._name, table, update.description)
 
         # Create table directory
-        table_dir = self._files.dir / create.name
+        table_dir = self._files.dir / table
 
         # Use Table class method to create table
         Table.initialize(self._db, table_dir)

@@ -314,7 +314,7 @@ def test_metadata_namespace_cannot_modify_tables(temp_metadata):
     from ..api.error import ReadOnlyError
 
     with pytest.raises(ReadOnlyError):
-        metadata_namespace.create_table(TableCreateRequest(name="new_table", description="New table"))
+        metadata_namespace.create_table("new_table", TableUpdateRequest(description="New table"))
 
     with pytest.raises(ReadOnlyError):
         metadata_namespace.update_table("namespace", TableUpdateRequest(description="Updated description"))

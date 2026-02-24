@@ -34,13 +34,13 @@ To support different storage methods, we have designed a storage system.
 
 | Phase   | Description          | Doc                                 |
 | ------- | -------------------- | ----------------------------------- |
-| Phase 1 | Local git repository | [Local Git](doc/store/local-git.md) |
+| Phase 1 | Local git repository | [Local Git](src/local/local.md) |
 | Phase 2 | GitHub repository    | TODO                                |
 
 ## API & Visualization
 
 | Phase   | Description    | Doc                         |
 | ------- | -------------- | --------------------------- |
-| Phase 1 | RESTful API    | [API v1](doc/api/api-v1.md) |
+| Phase 1 | RESTful API    | [API v1](src/api/api-v1.md) |
 | Phase 2 | Visualization  | TODO                        |
 | Phase 3 | Authentication | TODO                        |
